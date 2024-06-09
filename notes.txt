@@ -1,0 +1,30 @@
+* Written in latest available version of C supported by MSVC.
+* Entirely self-contained with no dependencies.
+* Public domain.
+* Hosted on GitHub.
+* Command-line tool.
+* Documents hosted in same repository (for now).
+* Source is custom version of markdown.
+* Compiler is very restrictive..
+* Source is entirely semantic and does not describe how it will be presented.
+* Support hyperlinks for sources and index.
+* Consider tooltips and/or hyperlinks for important definitions.
+* All memory allocated up-front.
+* General heap memory and scratch memory.
+* No memory is freed.
+* No use of virtual memory, to prevent platform-specific code.
+* Use standard C file and memory API.
+* Consider allowing the embedding of images.
+* Markdown symbols should be semantic.
+* Tokenise into flat list of elements.
+* Use tokens to generate output files.
+* Start with hardcoded output formatting.
+* Output formatting eventually should be defined in config file.
+* Config file should be simple to parse.
+* Output formats:
+	* Pure text - Strip markdown symbols and display as best as possible.
+	* HTML - Focus on simplicity and readability. Also support desktop and mobile.
+	* eBook - Support most common format.
+	* Print - Details TBD.
+* Error output must be detailed.
+* Exit process on first error.
