@@ -52,12 +52,16 @@ typedef struct
 } parse_context;
 
 noreturn
-static void handle_error(const char* format, ...)
+static void handle_parse_error(parse_context* ctx, const char* format, ...)
 {
+	fprintf(stderr, "Error (line %u, column %u): ", ctx->line, ctx->column);
+
 	va_list args;
 	va_start(args, format);
 	vfprintf(stderr, format, args);
 	va_end(args);
+
+	fputc('\n', stderr);
 
 	exit(EXIT_FAILURE);
 }
@@ -66,7 +70,7 @@ static char* load_file(const char* filepath)
 {
 	FILE* f = fopen(filepath, "rb");
 	if (!f)
-		handle_error("Error opening file '%s': %s.\n", filepath, strerror(errno));
+		fprintf(stderr, "Error opening file '%s': %s.\n", filepath, strerror(errno)); 
 
 	// Get file size
 	fseek(f, 0, SEEK_END);
@@ -126,7 +130,7 @@ static char get_char(parse_context* ctx)
 				}
 				else
 				{
-					handle_error("Error: Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.\n");
+					handle_parse_error(ctx, "Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.");
 				}
 			}
 			else if (c == '\n')
@@ -136,12 +140,12 @@ static char get_char(parse_context* ctx)
 			}
 			else
 			{
-				handle_error("Error: Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.\n");
+				handle_parse_error(ctx, "Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.");
 			}
 		}
 		else if (c == 127)
 		{
-			handle_error("Error: Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.\n");
+			handle_parse_error(ctx, "Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.");
 		}
 		else
 		{
@@ -228,18 +232,18 @@ static char skip_comment(parse_context* ctx)
 				}
 				else
 				{
-					handle_error("Error: Unexpected character after end of C-style (/*...*/) comment.\n");
+					handle_parse_error(ctx, "Unexpected character after end of C-style (/*...*/) comment.");
 				}
 			}
 			else if (c == 0)
 			{
-				handle_error("Error: Unexpected end of file inside C-style (/*...*/) comment.\n");
+				handle_parse_error(ctx, "Unexpected end of file inside C-style (/*...*/) comment.");
 			}
 		}
 	}
 	else
 	{
-		handle_error("Error: Expected '/' or '*'.\n");
+		handle_parse_error(ctx, "Expected '/' or '*'.");
 	}
 }
 
@@ -255,20 +259,20 @@ static char parse_paragraph(parse_context* ctx, char c)
 			if (ctx->read_ptr[0] == '*')
 			{
 				if (ctx->read_ptr[1] == '*')
-					handle_error("Error: Only two levels of '*' allowed.\n");
+					handle_parse_error(ctx, "Only two levels of '*' allowed.");
 
 				put_control_code(ctx, control_code_strong);
 				consume_char(ctx);
 
 				if (ctx->read_ptr[0] == ' ')
-					handle_error("Error: Spaces are not permitted after strong (**) markup.\n");
+					handle_parse_error(ctx, "Spaces are not permitted after strong (**) markup.");
 			}
 			else
 			{
 				put_control_code(ctx, control_code_emphasis);
 
 				if (ctx->read_ptr[0] == ' ')
-					handle_error("Error: Spaces are not permitted after emphasis (*) markup.\n");
+					handle_parse_error(ctx, "Spaces are not permitted after emphasis (*) markup.");
 			}
 		}
 		else if (c == '-' && ctx->read_ptr[0] == '-')
@@ -276,7 +280,7 @@ static char parse_paragraph(parse_context* ctx, char c)
 			if (ctx->read_ptr[1] == '-')
 			{
 				if (ctx->read_ptr[2] == '-')
-					handle_error("Error: Too many hyphens.\n");
+					handle_parse_error(ctx, "Too many hyphens.\n");
 
 				put_control_code(ctx, control_code_em_dash);
 				consume_chars(ctx, 2);
@@ -290,20 +294,20 @@ static char parse_paragraph(parse_context* ctx, char c)
 		else if (c == '\n')
 		{
 			if (prev == ' ')
-				handle_error("Error: Extraneous space.\n");
+				handle_parse_error(ctx, "Extraneous space.");
 
 			return get_char(ctx);
 		}
 		else if (c == ' ')
 		{
 			if (prev == ' ')
-				handle_error("Error: Extraneous space.\n");
+				handle_parse_error(ctx, "Extraneous space.");
 
 			put_char(ctx, c);
 		}
 		else if (c == '\t')
 		{
-			handle_error("Error: Tabs are only permitted on a new line to represent a block quote.\n");
+			handle_parse_error(ctx, "Tabs are only permitted on a new line to represent a block quote.");
 		}
 		else
 		{
@@ -328,7 +332,7 @@ static void parse(parse_context* ctx)
 		switch (c)
 		{
 		case '\n':
-			handle_error("Error: Unnecessary blank line.");
+			handle_parse_error(ctx, "Unnecessary blank line.");
 		case '/':
 			consume_char(ctx);
 			c = skip_comment(ctx);
