@@ -1,9 +1,3 @@
-/*
-	NOTES:
-	* Add the concept of books as well as chapters. e.g. The bible or a collection of books.
-	* https://devblogs.microsoft.com/commandline/tar-and-curl-come-to-windows/
-*/
-
 #include <stdio.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -79,62 +73,105 @@ static char* load_file(const char* filepath)
 	const long size = ftell(f);
 	rewind(f);
 
-	// Allocate memory and null terminate
-	char* data = malloc(size + 1);
-	data[size] = 0;
+	// Allocate enough memory plus two bytes, to handle initial control code and null terminator
+	char* data = malloc(size + 2);
 
-	fread(data, 1, size, f);
+	// Null terminate
+	data[size + 1] = 0;
+
+	// Read one byte into buffer to allow space for initial control code
+	fread(data + 1, 1, size, f);
 
 	return data;
 }
 
-int64_t get_utf8_byte_count(char c)
-{
-	if ((c & 0b11110000) == 0b11110000)
-		return 4;
-	else if ((c & 0b11100000) == 0b11100000)
-		return 3;
-	else if ((c & 0b11000000) == 0b11000000)
-		return 2;
-	else
-		return 1;
-}
-
 static char get_char(parse_context* ctx)
 {
-	const char c = *ctx->read_ptr++;
+	char c = *ctx->read_ptr++;
 
-	ctx->next_line = ctx->line;
-	ctx->next_column = ctx->column;
+	ctx->line = ctx->next_line;
+	ctx->column = ctx->next_column;
 
-	if (c < 128)
+	if (c & 0b10000000) // UTF-8 code point with multiple bytes
+	{
+		if (!(c & 0b01000000))
+		{
+			// Ignore bytes in the middle of a UTF-8 code point
+		}
+		else
+		{
+			// First byte, so increment position
+			++ctx->next_column;
+		}
+	}
+	else // ASCII
 	{
 		if (c < 32)
 		{
+			if (c == 0)
+			{
+				return 0;
+			}
+			else if (c == '\t')
+			{
+			}
+			else if (c == '\r')
+			{
+				if (*ctx->read_ptr == '\n')
+				{
+					c = *ctx->read_ptr++;
+
+					++ctx->next_line;
+					ctx->next_column = 1;
+				}
+				else
+				{
+					handle_error("Error: Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.\n");
+				}
+			}
+			else if (c == '\n')
+			{
+				++ctx->next_line;
+				ctx->next_column = 1;
+			}
+			else
+			{
+				handle_error("Error: Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.\n");
+			}
 		}
 		else if (c == 127)
 		{
-			handle_error("Error: Control characters are not permitted; this error may be caused by file corruption or attempting to load a binary file.\n");
+			handle_error("Error: Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.\n");
+		}
+		else
+		{
+			++ctx->next_column;
 		}
 	}
 
-	return 0;
+	return c;
 }
 
-//static char peek_char(parse_context* ctx)
-//{
-//	return *ctx->read_ptr;
-//}
-
-static void consume_char(parse_context* ctx)
+static char consume_char(parse_context* ctx)
 {
-	++ctx->read_ptr;
+	const char c = get_char(ctx);
+	assert(c);
+
+	return c;
 }
 
-// TODO: Check for going past EOF
-static void consume_chars(parse_context* ctx, uint32_t n)
+static char consume_chars(parse_context* ctx, uint32_t n)
 {
-	ctx->read_ptr += n;
+	assert(n >0);
+
+	char c;
+	for (uint32_t i = 0; i < n; ++i)
+	{
+		c = get_char(ctx);
+		assert(c);
+	}
+
+	return c;
 }
 
 static void put_char(parse_context* ctx, char c)
@@ -145,6 +182,17 @@ static void put_char(parse_context* ctx, char c)
 static void put_control_code(parse_context* ctx, control_code code)
 {
 	*ctx->write_ptr++ = code;
+}
+
+static char skip_line(parse_context* ctx)
+{
+	char c;
+	do
+	{
+		c = get_char(ctx);
+	} while (c != '\n');
+
+	return get_char(ctx);
 }
 
 static char skip_comment(parse_context* ctx)
@@ -169,17 +217,12 @@ static char skip_comment(parse_context* ctx)
 			c = get_char(ctx);
 			if (c == '\n' && ctx->read_ptr[0] == '*' && ctx->read_ptr[1] == '/')
 			{
-				if (ctx->read_ptr[2] == '\n')
+				c = consume_chars(ctx, 3);
+				if (c == '\n')
 				{
-					consume_chars(ctx, 3);
-					return get_char(ctx);
+					return c;
 				}
-				else if (ctx->read_ptr[2] == '\r' && ctx->read_ptr[3] == '\n')
-				{
-					consume_chars(ctx, 4);
-					return get_char(ctx);
-				}
-				else if (ctx->read_ptr[2] == 0)
+				else if (c == 0)
 				{
 					return 0;
 				}
@@ -200,18 +243,13 @@ static char skip_comment(parse_context* ctx)
 	}
 }
 
-static char parse_paragraph(parse_context* ctx)
+static char parse_paragraph(parse_context* ctx, char c)
 {
 	put_control_code(ctx, control_code_paragraph);
 
-	char c = 0;
-	char prev;
-
+	char prev = 0;
 	for (;;)
 	{
-		prev = c;
-		c = get_char(ctx);
-
 		if (c == '*')
 		{
 			if (ctx->read_ptr[0] == '*')
@@ -235,21 +273,19 @@ static char parse_paragraph(parse_context* ctx)
 		}
 		else if (c == '-' && ctx->read_ptr[0] == '-')
 		{
-			put_control_code(ctx, control_code_en_dash);
-			consume_char(ctx);
-		}
-		else if (c == '-' && ctx->read_ptr[0] == '-' && ctx->read_ptr[1] == '-')
-		{
-			put_control_code(ctx, control_code_em_dash);
-			consume_chars(ctx, 2);
-		}
-		else if (c == '\r' && ctx->read_ptr[0] == '\n')
-		{
-			if (prev == ' ')
-				handle_error("Error: Extraneous space.\n");
+			if (ctx->read_ptr[1] == '-')
+			{
+				if (ctx->read_ptr[2] == '-')
+					handle_error("Error: Too many hyphens.\n");
 
-			consume_char(ctx);
-			return get_char(ctx);
+				put_control_code(ctx, control_code_em_dash);
+				consume_chars(ctx, 2);
+			}
+			else
+			{
+				put_control_code(ctx, control_code_en_dash);
+				consume_char(ctx);
+			}
 		}
 		else if (c == '\n')
 		{
@@ -262,6 +298,8 @@ static char parse_paragraph(parse_context* ctx)
 		{
 			if (prev == ' ')
 				handle_error("Error: Extraneous space.\n");
+
+			put_char(ctx, c);
 		}
 		else if (c == '\t')
 		{
@@ -271,20 +309,22 @@ static char parse_paragraph(parse_context* ctx)
 		{
 			put_char(ctx, c);
 		}
+
+		prev = c;
+		c = get_char(ctx);
 	}
 }
 
 static void parse(parse_context* ctx)
 {
-	//ctx->lines = nullptr;
-	//ctx->line_count = 0;
+	ctx->line = 1;
+	ctx->column = 1;
+	ctx->next_line = 1;
+	ctx->next_column = 1;
 
-	char c = *ctx->read_ptr;
-
+	char c = get_char(ctx);
 	for (;;)
 	{
-		//ctx->prev_char = 0;
-
 		switch (c)
 		{
 		case '\n':
@@ -309,380 +349,19 @@ static void parse(parse_context* ctx)
 		case 'I':
 		case 'V':
 		case 'X':
+			c = skip_line(ctx);
+			break;
 		case 0:
 			return;
 		default:
-			c = parse_paragraph(ctx);
+			c = parse_paragraph(ctx, c);
 		}
 	}
 }
 
-//static char get_char(parse_context* ctx)
-//{
-//	char c = *ctx->read_ptr++;
-//
-//	// Ignore \r to handle both Windows and Unix line endings
-//	if (c == '\r')
-//		c = *ctx->ptr++;
-//
-//	if (c == 0)
-//		longjmp(ctx->jmp_ctx, 1);
-//
-//	return c;
-//}
-//
-//static char peek_char(parse_context* ctx)
-//{
-//	char c = *ctx->ptr;
-//
-//	// Ignore \r to handle both Windows and Unix line endings
-//	if (c == '\r')
-//		c = *ctx->ptr++;
-//
-//	if (c == 0)
-//		longjmp(ctx->jmp_ctx, 1);
-//
-//	return c;
-//}
-//
-//static void consume_char(parse_context* ctx)
-//{
-//	assert(*ctx->ptr);
-//
-//	++ctx->ptr;
-//}
-//
-//static void parse(parse_context* ctx)
-//{
-//	//ctx->lines = nullptr;
-//	//ctx->line_count = 0;
-//
-//	for (;;)
-//	{
-//		//ctx->prev_char = 0;
-//
-//		switch (*ctx->text)
-//		{
-//		case '\r':
-//			// Skip past extra character used in Windows line endings
-//			++ctx->ptr;
-//			break;
-//		case '\n':
-//			handle_error("Error: Unnecessary blank line.");
-//		case '/':
-//			skip_comment(ctx);
-//			break;
-//		case '[':
-//		case '#':
-//		case '\t':
-//		case '*':
-//		case '1':
-//		case '2':
-//		case '3':
-//		case '4':
-//		case '5':
-//		case '6':
-//		case '7':
-//		case '8':
-//		case '9':
-//		default:
-//			parse_paragraph(ctx);
-//		}
-//	}
-//}
-
-//typedef enum
-//{
-//	document_type_book,
-//	document_type_article,
-//	document_type_pamphlet
-//} document_type;
-//
-//typedef enum
-//{
-//	document_element_type_heading,
-//	document_element_type_paragraph,
-//	document_element_type_blockquote
-//} document_element_type;
-//
-//typedef struct
-//{
-//	uint16_t	year;
-//	uint8_t		month;
-//	uint8_t		day;
-//} document_date;
-//
-//typedef struct
-//{
-//	document_element_type	type;
-//	uint32_t				level;
-//	const char*				text;
-//} document_element;
-//
-//typedef struct
-//{
-//	const char*			title;
-//	const char*			text;
-//	bool				roman;
-//	uint32_t			number;
-//	document_element*	elements;
-//	uint32_t			element_count;
-//} document_chapter;
-//
-//typedef struct
-//{
-//	document_type		type;
-//	const char*			title;
-//	const char**		authors;
-//	document_date		written;
-//	document_date		published;
-//	document_chapter*	chapters;
-//	uint32_t			author_count;
-//	uint32_t			chapter_count;
-//} document;
-//
-///*
-//	Because of the nature of the source format, we don't need to or want to fully tokenise the text.
-//	This isn't a programming language which ignores whitespace and used many symbols. The format is
-//	primarily line-based as the first character of each line dictates the type. This simplifies the
-//	parsing algorithm.
-//*/
-//typedef enum
-//{
-//	line_token_type_empty,
-//	line_token_type_chapter,
-//	line_token_type_heading,
-//	line_token_type_metadata,
-//	line_token_type_footnote,
-//	line_token_type_paragraph,
-//	line_token_type_blockquote,
-//	line_token_type_ordered_list,
-//	line_token_type_unordered_list
-//} line_token_type;
-//
-//typedef struct
-//{
-//	line_token_type	type;
-//	char*			begin;
-//	char*			end;
-//} line_token;
-//
-//typedef struct
-//{
-//	char*		ptr;
-//	uint32_t	size;
-//	line_token*	lines;
-//	uint32_t	line_count;
-//	char		prev_char;
-//	jmp_buf		jmp_ctx;
-//} parse_context;
-//
-//static void skip_comment(parse_context* ctx)
-//{
-//}
-//
-//static void skip_line(parse_context* ctx)
-//{
-//}
-//
-//noreturn
-//static void parse_finalise(parse_context* ctx)
-//{
-//}
-//
-//static bool check_newline(parse_context* ctx)
-//{
-//	if (ctx->ptr[0] == '\r')
-//	{
-//		if (ctx->ptr[1] != '\n')
-//			handle_error("Error: Carriage return cannot be used without subsequent new line character.\n");
-//
-//		ctx->ptr++;
-//
-//		return true;
-//	}
-//	else if (ctx->ptr[0] == '\n')
-//	{
-//		ctx->ptr++;
-//
-//		return true;
-//	}
-//
-//	return false;
-//}
-//
-//static void check_ctrl_char(parse_context* ctx)
-//{
-//	if (*ctx->ptr != '\t')
-//		handle_error("Error: Tab characters are only allowed to represent block quotes at the beginning of a line.\n");
-//	else if (*ctx->ptr < ' ' || *ctx->ptr == 127)
-//		handle_error("Error: Control characters are not permitted; this error may be caused by file corruption or attempting to load a binary file.\n");
-//}
-//
-//static void parse_paragraph(parse_context* ctx)
-//{
-//	if (*ctx->ptr == ' ')
-//		handle_error("Error: Leading spaces are not permitted.\n");
-//
-//	for (;;)
-//	{
-//		if (*ctx->ptr == ' ')
-//		{
-//			if (ctx->prev_char == ' ')
-//				handle_error("Error: unnecessary spaces are not permitted.\n");
-//		}
-//		else if (check_newline(ctx))	// New lines are allowed within paragraphs
-//		{
-//			if (check_newline(ctx))		// But an empty line signifies a new element
-//				return;
-//		}
-//		else if (*ctx->ptr == 0)
-//		{
-//			parse_finalise(ctx);
-//		}
-//		else
-//		{
-//			check_ctrl_char(ctx);
-//		}
-//
-//		ctx->prev_char = *ctx->ptr;
-//		++ctx->ptr;
-//	}
-//}
-//
-//// TODO: Track line and character numbers for error reporting
-//static void validate_element(const char* begin, const char* end)
-//{
-//	const int64_t len = end - begin;
-//	if (len == 0)
-//		handle_error("Error: Empty element.\n");
-//
-//	// TODO: Ensure no tabs or duplicate spaces
-//}
-//
-//static bool calculate_heading_size(parse_context* ctx)
-//{
-//	char c = peek_char(ctx);
-//	if (c == '#')
-//	{
-//		consume_char(ctx);
-//
-//		// Calculate header depth
-//		uint32_t header_depth = 1;
-//		//while (
-//
-//		ctx->size += sizeof(document_element);
-//	}
-//
-//	return false;
-//}
-//
-//static bool calculate_paragraph_size(parse_context* ctx)
-//{
-//	char c = peek_char(ctx);
-//	if (c == '\n')
-//	{
-//		consume_char(ctx);
-//
-//		char* begin = ctx->ptr;
-//
-//		ctx->size += sizeof(document_element);
-//
-//		for (;;)
-//		{
-//			c = get_char(ctx);
-//			if (c == '\n')
-//			{
-//				//validate_text(begin, ctx->ptr);
-//
-//				return true;
-//			}
-//		}
-//	}
-//
-//	return false;
-//}
-//
-//static char* parse_blockquote(char* text)
-//{
-//	for (;;)
-//	{
-//		if (*text == '\n' && text[1] != '/t')
-//			return text;
-//		else if (*text == 0)
-//			return text;
-//
-//		++text;
-//	}
-//}
-
-//static document* parse_document(char* text)
-//{
-//	parse_context ctx;
-//	ctx.ptr = text;
-//	ctx.size = sizeof(document);
-//
-//	if (!setjmp(ctx.jmp_ctx))
-//	{
-//	}
-//
-////	uint32_t size = sizeof(document);
-////	bool newline = true;
-////	char* current = text;
-////
-////	// First calculate amount of memory required
-////	for (;;)
-////	{
-////		if (*current == 0)
-////		{
-////			break;
-////		}
-////		else if (newline)
-////		{
-////			if (*current == '\t')
-////			{
-////				size += sizeof(document_element);
-////				current = parse_blockquote(current);
-////			}
-////			else
-////			{
-////				uint32_t header_depth = 0;
-////				while (*current == '#')
-////					++header_depth;
-////
-////				if (header_depth > 0)
-////				{
-////					if (header_depth == 1)
-////						size += sizeof(document_chapter);
-////					else
-////						size += sizeof(document_element);
-////				}
-////				else
-////				{
-////					size += sizeof(document_element);
-////					current = parse_paragraph(current);
-////				}
-////			}
-////		}
-////		else if (*current == '\n')
-////		{
-////			newline = false;
-////		}
-////		else if (*current == '\r')
-////		{
-////			// Ignore Windows line endings
-////		}
-////
-////		++current;
-////	}
-//
-//	return nullptr;
-//}
-
 int main(void)
 {
 	char* text = load_file("C:\\dev\\press\\doc\\Combat Liberalism - Mao Zedong.txt");
-	//document* doc = parse_document(text);
 
 	return EXIT_SUCCESS;
 }
