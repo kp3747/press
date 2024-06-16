@@ -31,14 +31,14 @@ typedef enum
 	control_code_heading_1,
 	control_code_heading_2,
 	control_code_heading_3,
-	control_code_heading_4,
-	control_code_heading_5,
-	control_code_heading_6,
 	control_code_paragraph,
 	control_code_reference,
-	control_code_blockquote,
 	control_code_ordered_list,
-	control_code_unordered_list
+	control_code_unordered_list,
+	control_code_reference_link,
+	control_code_blockquote_begin,
+	control_code_blockquote_end
+	
 } control_code;
 
 typedef struct
@@ -420,6 +420,50 @@ static char parse_paragraph(parse_context* ctx, char c)
 	}
 }
 
+static char parse_blockquote(parse_context* ctx, char c)
+{
+	put_control_code(ctx, control_code_blockquote_begin);
+
+	c = get_char(ctx);
+	for (;;)
+	{
+		if (check_emphasis(ctx, c))
+		{
+		}
+		else if (check_dash(ctx, c))
+		{
+		}
+		else if (check_space(ctx, c))
+		{
+		}
+		else if (check_newline(ctx, c))
+		{
+			c = get_char(ctx);
+			if (c == '\t')
+			{
+				c = get_char(ctx);
+				if (check_newline(ctx, c))
+				{
+				}
+				else
+				{
+					put_control_code(ctx, control_code_break);
+				}
+			}
+			else
+			{
+				return get_char(ctx);
+			}
+		}
+		else
+		{
+			put_char(ctx, c);
+		}
+
+		c = get_char(ctx);
+	}
+}
+
 static void parse(parse_context* ctx)
 {
 	ctx->line = 1;
@@ -435,14 +479,17 @@ static void parse(parse_context* ctx)
 		case '#':
 			c = parse_heading(ctx, c);
 			break;
+		case ' ':
+			handle_parse_error(ctx, "Lines cannot begin with a space.");
 		case '\n':
 			handle_parse_error(ctx, "Unnecessary blank line.");
 		case '/':
-			consume_char(ctx);
 			c = skip_comment(ctx);
 			break;
-		case '[':
 		case '\t':
+			c = parse_blockquote(ctx, c);
+			break;
+		case '[':
 		case '*':
 		case '1':
 		case '2':
