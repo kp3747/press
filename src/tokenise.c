@@ -9,11 +9,13 @@ typedef enum
 	line_token_type_heading_2,
 	line_token_type_heading_3,
 	line_token_type_reference,
+	line_token_type_line_break,
 	line_token_type_preformatted,
 	line_token_type_ordered_list,
 	line_token_type_unordered_list,
-	line_token_type_block_nmewline,
+	line_token_type_blockquote,
 	line_token_type_block_paragraph,
+	line_token_type_block_newline,
 	line_token_type_block_ordered_list,
 	line_token_type_block_unordered_list
 } line_token_type;
@@ -127,6 +129,8 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	line = &ctx->lines[ctx->line_count++];
 	line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
 	line->type = type;
+
+	return line;
 }
 
 static char get_char(tokenise_context* ctx)
@@ -286,9 +290,6 @@ static bool check_newline(tokenise_context* ctx, char c, line_token* line)
 {
 	if (c == '\n')
 	{
-//		if (ctx->pc == ' ')
-//			handle_tokenise_error(ctx, "Extraneous space.");
-
 		const uint32_t end = get_offset(ctx);
 		line->length = end - line->offset;
 
@@ -297,6 +298,62 @@ static bool check_newline(tokenise_context* ctx, char c, line_token* line)
 
 	return false;
 }
+
+static char tokenise_newline(tokenise_context* ctx, char c)
+{
+	c = get_char(ctx);
+	if (c != '\n')
+		handle_tokenise_error(ctx, "Line breaks must be empty.");
+
+	add_line_token(ctx, line_token_type_newline);
+
+	return c;
+}
+
+static char tokenise_blockquote(tokenise_context* ctx, char c)
+{
+	add_line_token(ctx, line_token_type_blockquote);
+
+	char c = get_char(ctx);
+	if (c == '\n')
+	{
+		c = get_char(ctx);
+		if (c != '\n')
+			handle_tokenise_error(ctx, "Line breaks must be empty.");
+
+		add_line_token(ctx, line_token_type_block_newline);
+	}
+	else
+	{
+		add_line_token(ctx, line_token_type_block_paragraph);
+	}
+
+	return get_char(ctx);
+}
+
+//static bool try_tokenise_newline(tokenise_context* ctx, char c)
+//{
+//	if (c == '\n')
+//	{
+//		add_line_token(ctx, line_token_type_newline);
+//
+//		return true;
+//	}
+//
+//	return false;
+//}
+//
+//static bool try_tokenise_blockquote(tokenise_context* ctx, char c)
+//{
+//	if (c == '\t')
+//	{
+//		add_line_token(ctx, line_token_type_blockquote);
+//
+//		return true;
+//	}
+//
+//	return false;
+//}
 
 static char tokenise_heading(tokenise_context* ctx, char c)
 {
@@ -352,6 +409,12 @@ static void tokenise_lines(tokenise_context* ctx)
 	{
 		switch (c)
 		{
+		case '\t':
+			c = tokenise_blockquote(ctx, c);
+			break;
+		case '\n':
+			c = tokenise_newline(ctx, c);
+			break;
 		case '#':
 			c = tokenise_heading(ctx, c);
 			break;
