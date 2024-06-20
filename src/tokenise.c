@@ -9,54 +9,92 @@ typedef enum
 	line_token_type_heading_2,
 	line_token_type_heading_3,
 	line_token_type_reference,
-	line_token_type_line_break,
+	//line_token_type_line_break,
 	line_token_type_preformatted,
-	line_token_type_ordered_list,
-	line_token_type_unordered_list,
-	line_token_type_blockquote,
-	line_token_type_block_paragraph,
 	line_token_type_block_newline,
-	line_token_type_block_ordered_list,
-	line_token_type_block_unordered_list
+	line_token_type_unordered_list,
+	line_token_type_block_paragraph,
+	line_token_type_ordered_list_arabic,
+	line_token_type_block_unordered_list,
+	line_token_type_ordered_list_roman_lower,
+	line_token_type_ordered_list_roman_upper,
+	line_token_type_ordered_list_letter_lower,
+	line_token_type_ordered_list_letter_upper,
+	line_token_type_block_ordered_list_arabic,
+	line_token_type_block_ordered_list_roman_lower,
+	line_token_type_block_ordered_list_roman_upper,
+	line_token_type_block_ordered_list_letter_lower,
+	line_token_type_block_ordered_list_letter_upper,
 } line_token_type;
 
 typedef enum
 {
-	text_token_type_quote,
 	text_token_type_strong,
 	text_token_type_en_dash,
 	text_token_type_em_dash,
 	text_token_type_emphasis,
 	text_token_type_reference,
 	text_token_type_apostrophe,
+	text_token_type_single_quote,
+	text_token_type_double_quote,
 	text_token_type_preformatted
 } text_token_type;
 
+//typedef struct
+//{
+//	uint32_t offset;
+//	uint32_t length	: 27;
+//	uint32_t type	: 5;	// line_token_type
+//} line_token;
+
 typedef struct
 {
-	uint32_t offset;
-	uint32_t length	: 29;
-	uint32_t type	: 3;	// text_token_type
+	line_token_type	type;
+	uint32_t		index;
+	uint32_t		offset;
+	uint32_t		length;
 } line_token;
 
-static_assert(sizeof(line_token) == 8);									// Prevent accidental change
+static_assert(sizeof(line_token) == 16);								// Prevent accidental change
 static_assert((sizeof(line_token) & (sizeof(line_token) - 1)) == 0);	// Ensure power of two
 
 typedef struct
 {
-	char*		buffer;
-	const char*	read_ptr;
-	char*		write_ptr;
-	line_token*	lines;
-	uint32_t	line_count;
-	uint32_t	line_capacity;
-	uint32_t	line;
-	uint32_t	column;
-	uint32_t	next_line;
-	uint32_t	next_column;
-	char		c;
-	char		pc;
+	char*			buffer;
+	const char*		read_ptr;
+	char*			write_ptr;
+	line_token*		current_line;
+	line_token*		lines;
+	uint32_t		line_count;
+	uint32_t		line_capacity;
+	uint32_t		line;
+	uint32_t		column;
+	uint32_t		next_line;
+	uint32_t		next_column;
+	char			c;
+	char			pc;
+	//line_token_type	previous_line_type;
 } tokenise_context;
+
+static uint32_t ordered_list_num_to_int(tokenise_context* ctx, const char* str)
+{
+	uint32_t digits[10];
+	int current_digit = 0;
+
+	while (*str != '.')
+		digits[current_digit++] = *str++ - '0';
+
+	uint32_t result = 0;
+	uint32_t multiplier = 1;
+
+	for (int i = current_digit - 1; i >= 0; --i)
+	{
+		result += digits[i] * multiplier;
+		multiplier *= 10;
+	}
+
+	return result;
+}
 
 static void handle_tokenise_error(tokenise_context* ctx, const char* format, ...)
 {
@@ -130,7 +168,18 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
 	line->type = type;
 
+	ctx->current_line = line;
+	//ctx->previous_line_type = type;
+
 	return line;
+}
+
+static void set_read_ptr(tokenise_context* ctx, const char* ptr)
+{
+	ctx->column += (uint32_t)(ptr - ctx->read_ptr);
+	ctx->read_ptr = ptr;
+	ctx->c = ptr[-1];
+	ctx->pc = ptr[-2];
 }
 
 static char get_char(tokenise_context* ctx)
@@ -268,7 +317,7 @@ static bool check_dash(tokenise_context* ctx, char c)
 		if (ctx->read_ptr[1] == '-')
 		{
 			if (ctx->read_ptr[2] == '-')
-				handle_tokenise_error(ctx, "Too many hyphens.\n");
+				handle_tokenise_error(ctx, "Too many hyphens.");
 
 			put_text_token(ctx, text_token_type_em_dash);
 			get_char(ctx);
@@ -286,12 +335,18 @@ static bool check_dash(tokenise_context* ctx, char c)
 	return false;
 }
 
-static bool check_newline(tokenise_context* ctx, char c, line_token* line)
+static bool check_newline(tokenise_context* ctx, char c)
 {
 	if (c == '\n')
 	{
+		if (ctx->read_ptr[0] == ' ')
+			handle_tokenise_error(ctx, "Trailing spaces are not permitted.");
+
 		const uint32_t end = get_offset(ctx);
-		line->length = end - line->offset;
+		ctx->current_line->length = end - ctx->current_line->offset;
+
+		// Null terminate
+		put_char(ctx, 0);
 
 		return true;
 	}
@@ -299,61 +354,55 @@ static bool check_newline(tokenise_context* ctx, char c, line_token* line)
 	return false;
 }
 
-static char tokenise_newline(tokenise_context* ctx, char c)
+// TODO: Add support for quotes, references and preformatted text
+static char tokenise_text(tokenise_context* ctx)
+{
+	if (ctx->read_ptr[0] == ' ')
+		handle_tokenise_error(ctx, "Leading spaces are not permitted.");
+
+	for (;;)
+	{
+		const char c = get_char(ctx);
+
+		if (check_space(ctx, c))
+		{
+		}
+		else if (check_emphasis(ctx, c))
+		{
+		}
+		else if (check_dash(ctx, c))
+		{
+		}
+		else if (check_newline(ctx, c))
+		{
+			return get_char(ctx);
+		}
+		else
+		{
+			put_char(ctx, c);
+		}
+	}
+}
+
+static char tokenise_newline(tokenise_context* ctx, char c, bool blockquote)
 {
 	c = get_char(ctx);
 	if (c != '\n')
 		handle_tokenise_error(ctx, "Line breaks must be empty.");
 
-	add_line_token(ctx, line_token_type_newline);
+	const line_token_type type = blockquote ? line_token_type_block_newline : line_token_type_newline;
+	add_line_token(ctx, type);
 
 	return c;
 }
 
-static char tokenise_blockquote(tokenise_context* ctx, char c)
+static char tokenise_paragraph(tokenise_context* ctx, char c, bool blockquote)
 {
-	add_line_token(ctx, line_token_type_blockquote);
+	const line_token_type type = blockquote ? line_token_type_block_paragraph : line_token_type_paragraph;
+	add_line_token(ctx, type);
 
-	char c = get_char(ctx);
-	if (c == '\n')
-	{
-		c = get_char(ctx);
-		if (c != '\n')
-			handle_tokenise_error(ctx, "Line breaks must be empty.");
-
-		add_line_token(ctx, line_token_type_block_newline);
-	}
-	else
-	{
-		add_line_token(ctx, line_token_type_block_paragraph);
-	}
-
-	return get_char(ctx);
+	return tokenise_text(ctx);
 }
-
-//static bool try_tokenise_newline(tokenise_context* ctx, char c)
-//{
-//	if (c == '\n')
-//	{
-//		add_line_token(ctx, line_token_type_newline);
-//
-//		return true;
-//	}
-//
-//	return false;
-//}
-//
-//static bool try_tokenise_blockquote(tokenise_context* ctx, char c)
-//{
-//	if (c == '\t')
-//	{
-//		add_line_token(ctx, line_token_type_blockquote);
-//
-//		return true;
-//	}
-//
-//	return false;
-//}
 
 static char tokenise_heading(tokenise_context* ctx, char c)
 {
@@ -371,34 +420,62 @@ static char tokenise_heading(tokenise_context* ctx, char c)
 	if (c != ' ')
 		handle_tokenise_error(ctx, "Heading tags '#' require a following space.");
 
-	line_token* line = add_line_token(ctx, line_token_type_heading_1 + depth);
+	add_line_token(ctx, line_token_type_heading_1 + depth);
 
-	for (;;)
+	return tokenise_text(ctx);
+}
+
+static char tokenise_ordered_list(tokenise_context* ctx, char c, bool blockquote)
+{
+	const char* current = ctx->read_ptr;
+
+	while (*current >= '0' && *current <= '9')
+		++current;
+
+	if (*current++ == '.' && *current++ == ' ')
 	{
-		c = get_char(ctx);
+		const line_token_type type = blockquote ? line_token_type_block_ordered_list_arabic : line_token_type_ordered_list_arabic;
 
-		if (check_space(ctx, c))
-		{
-		}
-		else if (check_emphasis(ctx, c))
-		{
-		}
-		else if (check_dash(ctx, c))
-		{
-		}
-		else if (check_newline(ctx, c, line))
-		{
-			return get_char(ctx);
-		}
-		else
-		{
-			put_char(ctx, c);
-		}
+		line_token* line = add_line_token(ctx, type);
+		line->index = ordered_list_num_to_int(ctx, ctx->read_ptr);
+
+		set_read_ptr(ctx, current);
+
+		return tokenise_text(ctx);
 	}
+
+	return tokenise_paragraph(ctx, c, blockquote);
+}
+
+static char tokenise_blockquote(tokenise_context* ctx, char c)
+{
+	c = get_char(ctx);
+	switch (c)
+	{
+	case '\n':
+		c = tokenise_newline(ctx, c, true);
+		break;
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		c = tokenise_ordered_list(ctx, c, true);
+		break;
+	default:
+		c = tokenise_paragraph(ctx, c, true);
+	}
+
+	return c;
 }
 
 static void tokenise_lines(tokenise_context* ctx)
 {
+	// TODO: Init all other variables
 	ctx->line = 0;
 	ctx->column = 0;
 	ctx->next_line = 1;
@@ -413,11 +490,24 @@ static void tokenise_lines(tokenise_context* ctx)
 			c = tokenise_blockquote(ctx, c);
 			break;
 		case '\n':
-			c = tokenise_newline(ctx, c);
+			c = tokenise_newline(ctx, c, false);
 			break;
 		case '#':
 			c = tokenise_heading(ctx, c);
 			break;
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			c = tokenise_ordered_list(ctx, c, false);
+			break;
+		default:
+			c = tokenise_paragraph(ctx, c, false);
 		}
 	}
 }
