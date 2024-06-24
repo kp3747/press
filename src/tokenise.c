@@ -1,53 +1,3 @@
-typedef enum
-{
-	line_token_type_none,
-	line_token_type_eof,
-	line_token_type_newline,
-	line_token_type_metadata,
-	line_token_type_paragraph,
-	line_token_type_heading_1,
-	line_token_type_heading_2,
-	line_token_type_heading_3,
-	line_token_type_reference,
-	line_token_type_preformatted,
-	line_token_type_block_newline,
-	line_token_type_unordered_list,
-	line_token_type_block_paragraph,
-	line_token_type_ordered_list_arabic,
-	line_token_type_ordered_list_letter,
-	line_token_type_block_unordered_list,
-	line_token_type_ordered_list_roman_lower,
-	line_token_type_ordered_list_roman_upper,
-	line_token_type_block_ordered_list_arabic,
-	line_token_type_block_ordered_list_letter,
-	line_token_type_block_ordered_list_roman_lower,
-	line_token_type_block_ordered_list_roman_upper
-} line_token_type;
-
-typedef enum
-{
-	text_token_type_strong,
-	text_token_type_en_dash,
-	text_token_type_em_dash,
-	text_token_type_emphasis,
-	text_token_type_reference,
-	text_token_type_apostrophe,
-	text_token_type_single_quote,
-	text_token_type_double_quote,
-	text_token_type_preformatted
-} text_token_type;
-
-typedef struct
-{
-	line_token_type	type;
-	uint32_t		index;
-	uint32_t		offset;
-	uint32_t		length;
-} line_token;
-
-static_assert(sizeof(line_token) == 16);								// Prevent accidental change
-static_assert((sizeof(line_token) & (sizeof(line_token) - 1)) == 0);	// Ensure power of two
-
 typedef struct
 {
 	char*			buffer;
@@ -88,7 +38,7 @@ static uint32_t arabic_to_int(const char* str, char terminator)
 
 static void handle_tokenise_error(tokenise_context* ctx, const char* format, ...)
 {
-	fprintf(stderr, "Tokenisation error (line %u, column %u): ", ctx->line, ctx->column);
+	fprintf(stderr, "Parsing error (line %u, column %u): ", ctx->line, ctx->column);
 
 	va_list args;
 	va_start(args, format);
@@ -155,11 +105,11 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	}
 
 	line = &ctx->lines[ctx->line_count++];
-	line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
 	line->type = type;
+	line->line = ctx->line;
+	line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
 
 	ctx->current_line = line;
-	//ctx->previous_line_type = type;
 
 	return line;
 }
@@ -585,30 +535,36 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	return c;
 }
 
-static void tokenise_lines(tokenise_context* ctx)
+static void tokenise(char* data, line_tokens* out_tokens)
 {
-	// TODO: Init all other variables
-	ctx->line = 0;
-	ctx->column = 0;
-	ctx->next_line = 1;
-	ctx->next_column = 1;
+	tokenise_context ctx = {
+		.buffer			= data,
+		.read_ptr		= data,
+		.write_ptr		= data,
+		.next_line		= 1,
+		.next_column	= 1
+	};
 
-	char c = get_char(ctx);
+	char c = get_char(&ctx);
 	for (;;)
 	{
 		switch (c)
 		{
+		case 0:
+			out_tokens->lines = ctx.lines;
+			out_tokens->count = ctx.line_count;
+			return;
 		case '\t':
-			c = tokenise_blockquote(ctx, c);
+			c = tokenise_blockquote(&ctx, c);
 			break;
 		case '\n':
-			c = tokenise_newline(ctx, c, false);
+			c = tokenise_newline(&ctx, c, false);
 			break;
 		case '#':
-			c = tokenise_heading(ctx, c);
+			c = tokenise_heading(&ctx, c);
 			break;
 		case '*':
-			c = tokenise_unordered_list(ctx, c, false);
+			c = tokenise_unordered_list(&ctx, c, false);
 			break;
 		case '1':
 		case '2':
@@ -619,17 +575,17 @@ static void tokenise_lines(tokenise_context* ctx)
 		case '7':
 		case '8':
 		case '9':
-			c = tokenise_ordered_list_arabic(ctx, c, false);
+			c = tokenise_ordered_list_arabic(&ctx, c, false);
 			break;
 		case 'I':
 		case 'V':
 		case 'X':
-			c = tokenise_ordered_list_roman_upper(ctx, c, false);
+			c = tokenise_ordered_list_roman_upper(&ctx, c, false);
 			break;
 		case 'i':
 		case 'v':
 		case 'x':
-			c = tokenise_ordered_list_roman_lower(ctx, c, false);
+			c = tokenise_ordered_list_roman_lower(&ctx, c, false);
 			break;
 		case 'a':
 		case 'b':
@@ -639,10 +595,10 @@ static void tokenise_lines(tokenise_context* ctx)
 		case 'f':
 		case 'g':
 		case 'h':
-			c = tokenise_ordered_list_letter(ctx, c, false);
+			c = tokenise_ordered_list_letter(&ctx, c, false);
 			break;
 		default:
-			c = tokenise_paragraph(ctx, c, false);
+			c = tokenise_paragraph(&ctx, c, false);
 		}
 	}
 }
