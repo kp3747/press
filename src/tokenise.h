@@ -13,15 +13,9 @@ typedef enum
 	line_token_type_block_newline,
 	line_token_type_unordered_list,
 	line_token_type_block_paragraph,
+	line_token_type_ordered_list_roman,
 	line_token_type_ordered_list_arabic,
-	line_token_type_ordered_list_letter,
-	line_token_type_block_unordered_list,
-	line_token_type_ordered_list_roman_lower,
-	line_token_type_ordered_list_roman_upper,
-	line_token_type_block_ordered_list_arabic,
-	line_token_type_block_ordered_list_letter,
-	line_token_type_block_ordered_list_roman_lower,
-	line_token_type_block_ordered_list_roman_upper
+	line_token_type_ordered_list_letter
 } line_token_type;
 
 typedef enum

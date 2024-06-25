@@ -110,7 +110,7 @@ static line_token* validate_block_newline(validate_context* ctx, line_token* tok
 {
 	token = validate_get_next_token(ctx);
 	if (token->type != line_token_type_block_paragraph)
-		handle_validate_error(ctx, "Blank lines within block quotes must be followed by block quote paragraph.");
+		handle_validate_error(ctx, "Blank lines within block quotes must be followed by an indented paragraph.");
 
 	return token;
 }
@@ -119,7 +119,7 @@ static line_token* validate_block_paragraph(validate_context* ctx, line_token* t
 {
 	token = validate_get_next_token(ctx);
 	if (token->type != line_token_type_block_paragraph || token->type != line_token_type_block_newline)
-		handle_validate_error(ctx, "Block quotes must be followed by a blank line.");
+		handle_validate_error(ctx, "Block quotes must be followed by a blank indented line.");
 
 	return token;
 }
@@ -135,7 +135,7 @@ static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 			token = validate_block_newline(ctx, token);
 		else if (token->type == line_token_type_block_paragraph)
 			token = validate_block_paragraph(ctx, token);
-		else if (token->type == line_token_type_paragraph)
+		else if (token->type == line_token_type_newline)
 			break;
 		else
 			assert(false);
@@ -144,7 +144,7 @@ static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 	return token;
 }
 
-static void validate(line_tokens* tokens, doc_mem_req* out_mem)
+static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 {
 	validate_context ctx = {
 		.tokens			= tokens->lines,
@@ -157,11 +157,11 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem)
 		switch (token->type)
 		{
 		case line_token_type_eof:
-			out_mem->author_count = ctx.author_count;
-			out_mem->chapter_count = ctx.chapter_count;
-			out_mem->element_count = ctx.element_count;
-			out_mem->reference_count = ctx.reference_count;
-			out_mem->translator_count = ctx.translator_count;
+			out_mem_req->author_count = ctx.author_count;
+			out_mem_req->chapter_count = ctx.chapter_count;
+			out_mem_req->element_count = ctx.element_count;
+			out_mem_req->reference_count = ctx.reference_count;
+			out_mem_req->translator_count = ctx.translator_count;
 			return;
 		case line_token_type_newline:
 			token = validate_newline(&ctx, token);
@@ -189,6 +189,8 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem)
 		case line_token_type_block_paragraph:
 			token = validate_blockquote(&ctx, token);
 			break;
+		default:
+			assert(false);
 		}
 	}
 }

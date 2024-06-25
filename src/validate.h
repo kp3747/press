@@ -7,4 +7,4 @@ typedef struct
 	uint32_t translator_count;
 } doc_mem_req;
 
-static void validate(line_tokens* tokens, doc_mem_req* out_mem);
+static void validate(line_tokens* tokens, doc_mem_req* out_mem_req);
