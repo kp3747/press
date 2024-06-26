@@ -107,7 +107,8 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	line = &ctx->lines[ctx->line_count++];
 	line->type = type;
 	line->line = ctx->line;
-	line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
+	line->text = ctx->write_ptr;
+	//line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
 
 	ctx->current_line = line;
 
@@ -282,11 +283,11 @@ static bool check_newline(tokenise_context* ctx, char c)
 		if (ctx->read_ptr[0] == ' ')
 			handle_tokenise_error(ctx, "Trailing spaces are not permitted.");
 
-		const uint32_t end = get_offset(ctx);
-		ctx->current_line->length = end - ctx->current_line->offset;
+		//const uint32_t end = get_offset(ctx);
+		ctx->current_line->length = (uint32_t)(ctx->write_ptr - ctx->current_line->text);
 
 		// Null terminate
-		//put_char(ctx, 0);
+		put_char(ctx, 0);
 
 		return true;
 	}
@@ -315,7 +316,6 @@ static char tokenise_text(tokenise_context* ctx)
 		}
 		else if (check_newline(ctx, c))
 		{
-			put_char(ctx, '\n');
 			return get_char(ctx);
 		}
 		else

@@ -1,11 +1,16 @@
 typedef enum
 {
+	document_element_type_heading_1,
 	document_element_type_heading_2,
 	document_element_type_heading_3,
-	document_element_type_paragraph,
-	document_element_type_blockquote,
+	document_element_type_text_block,
+	document_element_type_line_break,
 	document_element_type_preformatted,
+	document_element_type_paragraph_end,
 	document_element_type_unordered_list,
+	document_element_type_blockquote_end,
+	document_element_type_paragraph_begin,
+	document_element_type_blockquote_begin,
 	document_element_type_ordered_list_roman,
 	document_element_type_ordered_list_arabic
 } document_element_type;

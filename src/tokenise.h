@@ -33,12 +33,13 @@ typedef enum
 
 typedef struct
 {
+	const char*		text;
 	line_token_type	type;
 	uint32_t		line;
 	uint32_t		index;
-	uint32_t		offset;
+	//uint32_t		offset;
 	uint32_t		length;
-	uint32_t		padding[3];
+	uint32_t		padding[2];
 } line_token;
 static_assert(sizeof(line_token) == 32);								// Prevent accidental change
 static_assert((sizeof(line_token) & (sizeof(line_token) - 1)) == 0);	// Ensure power of two

@@ -52,18 +52,19 @@ static line_token* validate_metadata(validate_context* ctx, line_token* token)
 
 static line_token* validate_paragraph(validate_context* ctx, line_token* token)
 {
-	++ctx->token_count;
+	ctx->token_count += 3;
 
-	line_token* next = validate_get_next_token(ctx);
-	do
+	token = validate_get_next_token(ctx);
+	while (token->type == line_token_type_paragraph)
 	{
-		next = validate_get_next_token(ctx);
-	} while (next->type == line_token_type_paragraph);
+		ctx->token_count += 2;
+		token = validate_get_next_token(ctx);
+	}
 
-	if (next->type != line_token_type_newline)
+	if (token->type != line_token_type_newline)
 		handle_validate_error(ctx, "Paragraphs must be followed by a blank line.");
 
-	return next;
+	return token;
 }
 
 static line_token* validate_heading(validate_context* ctx, line_token* token)
@@ -72,16 +73,16 @@ static line_token* validate_heading(validate_context* ctx, line_token* token)
 	assert(level >= 0);
 	assert(level < 3);
 
+	++ctx->token_count;
+
 	if (level == 0)
 		++ctx->chapter_count;
-	else
-		++ctx->token_count;
 
-	line_token* next = validate_get_next_token(ctx);
-	if (next->type != line_token_type_newline)
+	token = validate_get_next_token(ctx);
+	if (token->type != line_token_type_newline)
 		handle_validate_error(ctx, "Headings must be followed by a blank line.");
 
-	return next;
+	return token;
 }
 
 static line_token* validate_reference(validate_context* ctx, line_token* token)
@@ -117,6 +118,8 @@ static line_token* validate_block_newline(validate_context* ctx, line_token* tok
 
 static line_token* validate_block_paragraph(validate_context* ctx, line_token* token)
 {
+	ctx->token_count += 2;
+
 	token = validate_get_next_token(ctx);
 	if (token->type != line_token_type_block_paragraph || token->type != line_token_type_block_newline)
 		handle_validate_error(ctx, "Block quotes must be followed by a blank indented line.");
@@ -126,7 +129,7 @@ static line_token* validate_block_paragraph(validate_context* ctx, line_token* t
 
 static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 {
-	++ctx->token_count;
+	ctx->token_count += 5;
 
 	token = validate_get_next_token(ctx);
 	for (;;)

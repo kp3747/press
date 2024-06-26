@@ -4,9 +4,10 @@ typedef struct
 	line_token*			tokens;
 	document_element*	elements;
 	document_reference*	references;
-	uint32_t			current_token;
-	uint32_t			current_chapter;
+	document_chapter*	current_chapter;
+	uint32_t			current_element;
 	uint32_t			current_reference;
+	uint32_t			current_token;
 	uint32_t			token_count;
 	uint32_t			author_count;
 	uint32_t			chapter_count;
@@ -20,6 +21,94 @@ static line_token* finalise_get_next_token(finalise_context* ctx)
 	assert(ctx->current_token < ctx->token_count);
 
 	return &ctx->tokens[ctx->current_token++];
+}
+
+static void finalise_add_element(finalise_context* ctx, document_element_type type, const char* text)
+{
+	assert(ctx->element_count < ctx->element_count);
+
+	const uint32_t element_index = ctx->current_chapter->element_count++;
+	++ctx->element_count;
+
+	document_element* element = &ctx->current_chapter->elements[element_index];
+	element->type = type;
+	element->text = text;
+}
+
+static line_token* finalise_heading_1(finalise_context* ctx, line_token* token)
+{
+	const uint32_t chapter_index = ctx->doc->chapter_count++;
+
+	document_chapter* chapter = &ctx->doc->chapters[chapter_index];
+	chapter->elements = &ctx->elements[ctx->current_element];
+	chapter->references = &ctx->references[ctx->current_reference];
+	chapter->element_count = 0;
+	chapter->reference_count = 0;
+
+	ctx->current_chapter = chapter;
+
+	finalise_add_element(ctx, document_element_type_heading_1, token->text);
+}
+
+static line_token* finalise_heading_2(finalise_context* ctx, line_token* token)
+{
+	finalise_add_element(ctx, document_element_type_heading_2, token->text);
+}
+
+static line_token* finalise_heading_3(finalise_context* ctx, line_token* token)
+{
+	finalise_add_element(ctx, document_element_type_heading_3, token->text);
+}
+
+static line_token* finalise_paragraph(finalise_context* ctx, line_token* token)
+{
+	finalise_add_element(ctx, document_element_type_paragraph_begin, nullptr);
+	finalise_add_element(ctx, document_element_type_text_block, token->text);
+
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_paragraph)
+	{
+		finalise_add_element(ctx, document_element_type_line_break, nullptr);
+		finalise_add_element(ctx, document_element_type_text_block, token->text);
+		token = finalise_get_next_token(ctx);
+	}
+
+	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+}
+
+static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
+{
+	finalise_add_element(ctx, document_element_type_blockquote_begin, nullptr);
+
+	for (;;)
+	{
+		if (token->type == line_token_type_block_newline)
+		{
+		}
+		else if (token->type == line_token_type_block_paragraph)
+		{
+			finalise_add_element(ctx, document_element_type_paragraph_begin, nullptr);
+			finalise_add_element(ctx, document_element_type_text_block, token->text);
+
+			token = finalise_get_next_token(ctx);
+			while (token->type == line_token_type_block_paragraph)
+			{
+				finalise_add_element(ctx, document_element_type_line_break, nullptr);
+				finalise_add_element(ctx, document_element_type_text_block, token->text);
+				token = finalise_get_next_token(ctx);
+			}
+
+			finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	finalise_add_element(ctx, document_element_type_blockquote_end, nullptr);
+
+	return token;
 }
 
 static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* out_doc)
@@ -58,7 +147,7 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 
 	out_doc->metadata.author_count = mem_req->author_count;
 	out_doc->metadata.translator_count = mem_req->translator_count;
-	out_doc->chapter_count = mem_req->chapter_count;
+	//out_doc->chapter_count = mem_req->chapter_count;
 
 	finalise_context ctx = {
 		.doc				= out_doc,
@@ -84,12 +173,16 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			//token = finalise_metadata(&ctx, token);
 			break;
 		case line_token_type_paragraph:
-			//token = finalise_paragraph(&ctx, token);
+			token = finalise_paragraph(&ctx, token);
 			break;
 		case line_token_type_heading_1:
+			token = finalise_heading_1(&ctx, token);
+			break;
 		case line_token_type_heading_2:
+			token = finalise_heading_2(&ctx, token);
+			break;
 		case line_token_type_heading_3:
-			//token = finalise_heading(&ctx, token);
+			token = finalise_heading_3(&ctx, token);
 			break;
 		case line_token_type_reference:
 			//token = finalise_reference(&ctx, token);
@@ -98,7 +191,7 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			//token = finalise_preformatted(&ctx, token);
 			break;
 		case line_token_type_block_paragraph:
-			//token = finalise_blockquote(&ctx, token);
+			token = finalise_blockquote(&ctx, token);
 			break;
 		default:
 			token = finalise_get_next_token(&ctx);
