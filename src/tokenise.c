@@ -76,6 +76,11 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	line->text = ctx->write_ptr;
 	//line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
 
+#ifndef NDEBUG
+	if (type == line_token_type_newline || type == line_token_type_eof)
+		line->text = nullptr;
+#endif
+
 	ctx->current_line = line;
 
 	return line;
@@ -91,7 +96,6 @@ static void set_read_ptr(tokenise_context* ctx, const char* ptr)
 
 static char get_char(tokenise_context* ctx)
 {
-	ctx->pc = ctx->c;
 	char c = *ctx->read_ptr++;
 
 	ctx->line = ctx->next_line;
@@ -154,6 +158,37 @@ static char get_char(tokenise_context* ctx)
 		}
 	}
 
+	return c;
+}
+
+static char get_filtered_char(tokenise_context* ctx)
+{
+	ctx->pc = ctx->c;
+
+	char c = get_char(ctx);
+	if (c == '/' && *ctx->read_ptr == '*')
+	{
+		// Consume '*'
+		c = get_char(ctx);
+
+		for (;;)
+		{
+			if (c == 0)
+			{
+				handle_tokenise_error(ctx, "Comments must be closed \"/*...*/\".");
+			}
+			else if (c == '*' && *ctx->read_ptr == '/')
+			{
+				// Consume '/'
+				get_char(ctx);
+				c = get_char(ctx);
+				break;
+			}
+
+			c = get_char(ctx);
+		}
+	}
+
 	ctx->c = c;
 
 	return c;
@@ -198,17 +233,11 @@ static bool check_emphasis(tokenise_context* ctx, char c)
 				handle_tokenise_error(ctx, "Only two levels of '*' allowed.");
 
 			put_text_token(ctx, text_token_type_strong);
-			get_char(ctx);
-
-			if (ctx->read_ptr[0] == ' ')
-				handle_tokenise_error(ctx, "Spaces are not permitted after strong (**) markup.");
+			get_filtered_char(ctx);
 		}
 		else
 		{
 			put_text_token(ctx, text_token_type_emphasis);
-
-			if (ctx->read_ptr[0] == ' ')
-				handle_tokenise_error(ctx, "Spaces are not permitted after emphasis (*) markup.");
 		}
 
 		return true;
@@ -227,13 +256,13 @@ static bool check_dash(tokenise_context* ctx, char c)
 				handle_tokenise_error(ctx, "Too many hyphens.");
 
 			put_text_token(ctx, text_token_type_em_dash);
-			get_char(ctx);
-			get_char(ctx);
+			get_filtered_char(ctx);
+			get_filtered_char(ctx);
 		}
 		else
 		{
 			put_text_token(ctx, text_token_type_en_dash);
-			get_char(ctx);
+			get_filtered_char(ctx);
 		}
 
 		return true;
@@ -262,15 +291,13 @@ static bool check_newline(tokenise_context* ctx, char c)
 }
 
 // TODO: Add support for quotes, references and preformatted text
-static char tokenise_text(tokenise_context* ctx)
+static char tokenise_text(tokenise_context* ctx, char c)
 {
-	if (ctx->read_ptr[0] == ' ')
+	if (c == ' ')
 		handle_tokenise_error(ctx, "Leading spaces are not permitted.");
 
 	for (;;)
 	{
-		const char c = get_char(ctx);
-
 		if (check_space(ctx, c))
 		{
 		}
@@ -282,23 +309,23 @@ static char tokenise_text(tokenise_context* ctx)
 		}
 		else if (check_newline(ctx, c))
 		{
-			return get_char(ctx);
+			return get_filtered_char(ctx);
 		}
 		else
 		{
 			put_char(ctx, c);
 		}
+
+		c = get_filtered_char(ctx);
 	}
 }
 
 static char tokenise_newline(tokenise_context* ctx, char c, bool blockquote)
 {
-	c = get_char(ctx);
-	if (c != '\n')
-		handle_tokenise_error(ctx, "Line breaks must be empty.");
-
 	const line_token_type type = blockquote ? line_token_type_block_newline : line_token_type_newline;
 	add_line_token(ctx, type);
+
+	c = get_filtered_char(ctx);
 
 	return c;
 }
@@ -308,28 +335,30 @@ static char tokenise_paragraph(tokenise_context* ctx, char c, bool blockquote)
 	const line_token_type type = blockquote ? line_token_type_block_paragraph : line_token_type_paragraph;
 	add_line_token(ctx, type);
 
-	return tokenise_text(ctx);
+	return tokenise_text(ctx, c);
 }
 
 static char tokenise_heading(tokenise_context* ctx, char c)
 {
-	uint32_t depth = 0;
+	int32_t depth = -1;
 	do
 	{
 		++depth;
-		c = get_char(ctx);
+		c = get_filtered_char(ctx);
 	} while (c == '#');
 
 	if (depth > 2)
 		handle_tokenise_error(ctx, "Exceeded maximum heading depth of 3.");
 
-	c = get_char(ctx);
 	if (c != ' ')
 		handle_tokenise_error(ctx, "Heading tags '#' must be followed by a space.");
 
 	add_line_token(ctx, line_token_type_heading_1 + depth);
 
-	return tokenise_text(ctx);
+	// Consume space
+	c = get_filtered_char(ctx);
+
+	return tokenise_text(ctx, c);
 }
 
 static char tokenise_ordered_list_arabic(tokenise_context* ctx, char c)
@@ -346,7 +375,7 @@ static char tokenise_ordered_list_arabic(tokenise_context* ctx, char c)
 
 		set_read_ptr(ctx, current);
 
-		return tokenise_text(ctx);
+		return tokenise_text(ctx, get_filtered_char(ctx));
 	}
 
 	return tokenise_paragraph(ctx, c, false);
@@ -375,7 +404,7 @@ static char tokenise_ordered_list_roman_upper(tokenise_context* ctx, char c)
 				line->index = i + 1;
 				set_read_ptr(ctx, current);
 
-				return tokenise_text(ctx);
+				return tokenise_text(ctx, get_filtered_char(ctx));
 			}
 		}
 
@@ -408,7 +437,7 @@ static char tokenise_ordered_list_roman_lower(tokenise_context* ctx, char c)
 				line->index = i + 1;
 				set_read_ptr(ctx, current);
 
-				return tokenise_text(ctx);
+				return tokenise_text(ctx, get_filtered_char(ctx));
 			}
 		}
 
@@ -427,7 +456,7 @@ static char tokenise_ordered_list_letter(tokenise_context* ctx, char c, bool blo
 
 		set_read_ptr(ctx, ctx->read_ptr + 2);
 
-		return tokenise_text(ctx);
+		return tokenise_text(ctx, get_filtered_char(ctx));
 	}
 
 	return tokenise_paragraph(ctx, c, blockquote);
@@ -435,18 +464,18 @@ static char tokenise_ordered_list_letter(tokenise_context* ctx, char c, bool blo
 
 static char tokenise_unordered_list(tokenise_context* ctx, char c)
 {
-	c = get_char(ctx);
+	c = get_filtered_char(ctx);
 	if (c != ' ')
 		handle_tokenise_error(ctx, "Unordered list tags '*' must be followed by a space.");
 
 	add_line_token(ctx, line_token_type_unordered_list);
 
-	return tokenise_text(ctx);
+	return tokenise_text(ctx, get_filtered_char(ctx));
 }
 
 static char tokenise_blockquote(tokenise_context* ctx, char c)
 {
-	c = get_char(ctx);
+	c = get_filtered_char(ctx);
 	switch (c)
 	{
 	case '\n':
@@ -455,6 +484,20 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	default:
 		c = tokenise_paragraph(ctx, c, true);
 	}
+
+	return c;
+}
+
+static char tokenise_metadata(tokenise_context* ctx, char c)
+{
+	// Just skip for now
+	do
+	{
+		c = get_filtered_char(ctx);
+	} while (c != '\n');
+
+	// Consume '\n'
+	c = get_filtered_char(ctx);
 
 	return c;
 }
@@ -469,7 +512,7 @@ static void tokenise(char* data, line_tokens* out_tokens)
 		.next_column	= 1
 	};
 
-	char c = get_char(&ctx);
+	char c = get_filtered_char(&ctx);
 	for (;;)
 	{
 		switch (c)
@@ -478,6 +521,9 @@ static void tokenise(char* data, line_tokens* out_tokens)
 			out_tokens->lines = ctx.lines;
 			out_tokens->count = ctx.line_count;
 			return;
+		case '[':
+			c = tokenise_metadata(&ctx, c);
+			break;
 		case '\t':
 			c = tokenise_blockquote(&ctx, c);
 			break;

@@ -33,9 +33,9 @@ typedef enum
 
 typedef struct
 {
-	const char*		text;
 	line_token_type	type;
 	uint32_t		line;
+	const char*		text;
 	uint32_t		index;
 	//uint32_t		offset;
 	uint32_t		length;
