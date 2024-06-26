@@ -47,48 +47,14 @@ static void handle_tokenise_error(tokenise_context* ctx, const char* format, ...
 
 	fputc('\n', stderr);
 
+	assert(false);
 	exit(EXIT_FAILURE);
 }
 
-static char* load_file(const char* filepath)
-{
-	FILE* f = fopen(filepath, "rb");
-	if (!f)
-		fprintf(stderr, "Error opening file '%s': %s.\n", filepath, strerror(errno)); 
-
-	// Get file size
-	fseek(f, 0, SEEK_END);
-	const long size = ftell(f);
-	rewind(f);
-
-	/*
-		Allocate enough memory plus two bytes:
-		1. Potential extra new line character before null terminator to make parsing simpler.
-		2. Null terminator.
-	*/
-	char* data = malloc(size + 2);
-
-	// Put data one byte past the beginning of the buffer to allow space for initial control code
-	fread(data, 1, size, f);
-
-	// Check if final new line character needs to be added, then null terminate
-	if (data[size - 1] == '\n')
-	{
-		data[size] = 0;
-	}
-	else
-	{
-		data[size] = '\n';
-		data[size + 1] = 0;
-	}
-
-	return data;
-}
-
-static uint32_t get_offset(tokenise_context* ctx)
-{
-	return (uint32_t)(ctx->buffer - ctx->write_ptr);
-}
+//static uint32_t get_offset(tokenise_context* ctx)
+//{
+//	return (uint32_t)(ctx->buffer - ctx->write_ptr);
+//}
 
 static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 {
