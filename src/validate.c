@@ -141,6 +141,23 @@ static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 	return token;
 }
 
+static line_token* validate_ordered_list_roman(validate_context* ctx, line_token* token)
+{
+	ctx->element_count += 3;
+
+	token = validate_get_next_token(ctx);
+	while (token->type == line_token_type_ordered_list_roman)
+	{
+		++ctx->element_count;
+		token = validate_get_next_token(ctx);
+	}
+
+	if (token->type != line_token_type_newline)
+		handle_validate_error(ctx, "Lists must be followed by a blank line.");
+
+	return token;
+}
+
 static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 {
 	validate_context ctx = {
@@ -182,6 +199,9 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			break;
 		case line_token_type_block_paragraph:
 			token = validate_blockquote(&ctx, token);
+			break;
+		case line_token_type_ordered_list_roman:
+			token = validate_ordered_list_roman(&ctx, token);
 			break;
 		default:
 			token = validate_get_next_token(&ctx);

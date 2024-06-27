@@ -71,6 +71,18 @@ static void generate_html(const document* doc)
 				print_tabs(f, --depth);
 				fputs("</blockquote>", f);
 				break;
+			case document_element_type_ordered_list_begin_roman:
+				print_tabs(f, depth++);
+				fputs("<ol type=\"I\">", f);
+				break;
+			case document_element_type_ordered_list_end:
+				print_tabs(f, --depth);
+				fputs("</ol>", f);
+				break;
+			case document_element_type_ordered_list_item:
+				print_tabs(f, depth);
+				fprintf(f, "<li>%s</li>", element->text);
+				break;
 			}
 		}
 	}

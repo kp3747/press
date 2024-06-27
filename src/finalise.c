@@ -120,6 +120,23 @@ static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
 	return token;
 }
 
+static line_token* finalise_ordered_list_roman(finalise_context* ctx, line_token* token)
+{
+	finalise_add_element(ctx, document_element_type_ordered_list_begin_roman, nullptr);
+	finalise_add_element(ctx, document_element_type_ordered_list_item, token->text);
+
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_ordered_list_roman)
+	{
+		finalise_add_element(ctx, document_element_type_ordered_list_item, token->text);
+		token = finalise_get_next_token(ctx);
+	}
+
+	finalise_add_element(ctx, document_element_type_ordered_list_end, nullptr);
+
+	return token;
+}
+
 static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* out_doc)
 {
 	const size_t author_size = sizeof(const char*) * mem_req->author_count;
@@ -201,6 +218,9 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			break;
 		case line_token_type_block_paragraph:
 			token = finalise_blockquote(&ctx, token);
+			break;
+		case line_token_type_ordered_list_roman:
+			token = finalise_ordered_list_roman(&ctx, token);
 			break;
 		default:
 			token = finalise_get_next_token(&ctx);
