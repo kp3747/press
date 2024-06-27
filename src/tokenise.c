@@ -289,8 +289,27 @@ static char tokenise_text(tokenise_context* ctx, char c)
 	if (c == ' ')
 		handle_tokenise_error(ctx, "Leading spaces are not permitted.");
 
+	int quote_level = 0;
+
 	for (;;)
 	{
+		if (c == '"')
+		{
+			if (quote_level == 0)
+			{
+				put_text_token(ctx, text_token_type_quote_level_1_begin);
+				c = get_filtered_char(ctx);
+				
+				quote_level = 1;
+			}
+			else if (quote_level == 1)
+			{
+				put_text_token(ctx, text_token_type_quote_level_1_end);
+				c = get_filtered_char(ctx);
+
+				quote_level = 0;
+			}
+		}
 		if (check_space(ctx, c))
 		{
 		}
@@ -302,7 +321,7 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		}
 		else if (check_newline(ctx, c))
 		{
-			return get_filtered_char(ctx);
+			break;
 		}
 		else
 		{
@@ -311,6 +330,11 @@ static char tokenise_text(tokenise_context* ctx, char c)
 
 		c = get_filtered_char(ctx);
 	}
+
+	if (quote_level != 0)
+		handle_tokenise_error(ctx, "Unterminated quote.");
+
+	return get_filtered_char(ctx);
 }
 
 static char tokenise_newline(tokenise_context* ctx, char c, bool blockquote)

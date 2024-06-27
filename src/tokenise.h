@@ -25,9 +25,8 @@ typedef enum
 	text_token_type_em_dash,
 	text_token_type_emphasis,
 	text_token_type_reference,
-	text_token_type_apostrophe,
-	text_token_type_single_quote,
-	text_token_type_double_quote,
+	text_token_type_quote_level_1_begin,
+	text_token_type_quote_level_1_end,
 	text_token_type_preformatted
 } text_token_type;
 

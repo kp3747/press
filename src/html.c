@@ -6,6 +6,49 @@ static void print_tabs(FILE* f, int depth)
 		fputc('\t', f);
 }
 
+static void print_text_block(FILE* f, const char* text)
+{
+	while (*text)
+	{
+		if (*text == text_token_type_en_dash)
+		{
+			fputc(0xE2, f);
+			fputc(0x80, f);
+			fputc(0x93, f);
+		}
+		else if (*text == text_token_type_em_dash)
+		{
+			fputc(0xE2, f);
+			fputc(0x80, f);
+			fputc(0x94, f);
+		}
+		else if (*text == '\'')
+		{
+			fputc(0xE2, f);
+			fputc(0x80, f);
+			fputc(0x99, f);
+		}
+		else if (*text == text_token_type_quote_level_1_begin)
+		{
+			fputc(0xE2, f);
+			fputc(0x80, f);
+			fputc(0x9C, f);
+		}
+		else if (*text == text_token_type_quote_level_1_end)
+		{
+			fputc(0xE2, f);
+			fputc(0x80, f);
+			fputc(0x9D, f);
+		}
+		else
+		{
+			fputc(*text, f);
+		}
+
+		++text;
+	}
+}
+
 static void generate_html(const document* doc)
 {
 	const char* filepath = "out.html";
@@ -49,7 +92,7 @@ static void generate_html(const document* doc)
 				break;
 			case document_element_type_text_block:
 				print_tabs(f, depth + 1);
-				fputs(element->text, f);
+				print_text_block(f, element->text);
 				break;
 			case document_element_type_line_break:
 				print_tabs(f, depth + 1);
