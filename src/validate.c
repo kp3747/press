@@ -141,19 +141,19 @@ static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 	return token;
 }
 
-static line_token* validate_ordered_list_roman(validate_context* ctx, line_token* token)
+static line_token* validate_ordered_list(validate_context* ctx, line_token* token, line_token_type type)
 {
 	ctx->element_count += 3;
 
 	token = validate_get_next_token(ctx);
-	while (token->type == line_token_type_ordered_list_roman)
+	while (token->type == type)
 	{
 		++ctx->element_count;
 		token = validate_get_next_token(ctx);
 	}
 
 	if (token->type != line_token_type_newline)
-		handle_validate_error(ctx, "Lists must be followed by a blank line.");
+		handle_validate_error(ctx, "List items must be followed by a blank line.");
 
 	return token;
 }
@@ -201,7 +201,13 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			token = validate_blockquote(&ctx, token);
 			break;
 		case line_token_type_ordered_list_roman:
-			token = validate_ordered_list_roman(&ctx, token);
+			token = validate_ordered_list(&ctx, token, line_token_type_ordered_list_roman);
+			break;
+		case line_token_type_ordered_list_arabic:
+			token = validate_ordered_list(&ctx, token, line_token_type_ordered_list_arabic);
+			break;
+		case line_token_type_ordered_list_letter:
+			token = validate_ordered_list(&ctx, token, line_token_type_ordered_list_letter);
 			break;
 		default:
 			token = validate_get_next_token(&ctx);

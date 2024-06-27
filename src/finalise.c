@@ -120,13 +120,13 @@ static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
 	return token;
 }
 
-static line_token* finalise_ordered_list_roman(finalise_context* ctx, line_token* token)
+static line_token* finalise_ordered_list(finalise_context* ctx, line_token* token, line_token_type line_type, document_element_type doc_type)
 {
-	finalise_add_element(ctx, document_element_type_ordered_list_begin_roman, nullptr);
+	finalise_add_element(ctx, doc_type, nullptr);
 	finalise_add_element(ctx, document_element_type_ordered_list_item, token->text);
 
 	token = finalise_get_next_token(ctx);
-	while (token->type == line_token_type_ordered_list_roman)
+	while (token->type == line_type)
 	{
 		finalise_add_element(ctx, document_element_type_ordered_list_item, token->text);
 		token = finalise_get_next_token(ctx);
@@ -220,7 +220,13 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			token = finalise_blockquote(&ctx, token);
 			break;
 		case line_token_type_ordered_list_roman:
-			token = finalise_ordered_list_roman(&ctx, token);
+			token = finalise_ordered_list(&ctx, token, line_token_type_ordered_list_roman, document_element_type_ordered_list_begin_roman);
+			break;
+		case line_token_type_ordered_list_arabic:
+			token = finalise_ordered_list(&ctx, token, line_token_type_ordered_list_arabic, document_element_type_ordered_list_begin_arabic);
+			break;
+		case line_token_type_ordered_list_letter:
+			token = finalise_ordered_list(&ctx, token, line_token_type_ordered_list_letter, document_element_type_ordered_list_begin_letter);
 			break;
 		default:
 			token = finalise_get_next_token(&ctx);

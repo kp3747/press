@@ -15,6 +15,7 @@ typedef enum
 	document_element_type_ordered_list_item,
 	document_element_type_ordered_list_begin_roman,
 	document_element_type_ordered_list_begin_arabic,
+	document_element_type_ordered_list_begin_letter
 } document_element_type;
 
 typedef struct
