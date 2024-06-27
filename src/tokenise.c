@@ -381,7 +381,7 @@ static char tokenise_ordered_list_arabic(tokenise_context* ctx, char c)
 	return tokenise_paragraph(ctx, c, false);
 }
 
-static char tokenise_ordered_list_roman_upper(tokenise_context* ctx, char c)
+static char tokenise_ordered_list_roman(tokenise_context* ctx, char c)
 {
 	const char* current = ctx->read_ptr;
 
@@ -393,46 +393,15 @@ static char tokenise_ordered_list_roman_upper(tokenise_context* ctx, char c)
 		++current;
 	}
 
-	if (*current == '.' && *current++ == ' ')
+	if (*current++ == '.' && *current++ == ' ')
 	{
 		line_token* line = add_line_token(ctx, line_token_type_ordered_list_roman);
 
-		for (int i = 0; i < roman_numeral_max; ++i)
-		{
-			if (strcmp(ctx->read_ptr - 1, roman_upper_strings[i]) == 0)
-			{
-				line->index = i + 1;
-				set_read_ptr(ctx, current);
-
-				return tokenise_text(ctx, get_filtered_char(ctx));
-			}
-		}
-
-		handle_tokenise_error(ctx, "Ordered lists using Roman numerals currently have a maximum value of %d.", roman_numeral_max);
-	}
-
-	return tokenise_paragraph(ctx, c, false);
-}
-
-static char tokenise_ordered_list_roman_lower(tokenise_context* ctx, char c)
-{
-	const char* current = ctx->read_ptr;
-
-	for (;;)
-	{
-		if (*current != 'i' && *current != 'v' && *current != 'x')
-			break;
-
-		++current;
-	}
-
-	if (*current == '.' && *current++ == ' ')
-	{
-		line_token* line = add_line_token(ctx, line_token_type_ordered_list_roman);
+		const size_t len = current - ctx->read_ptr + 1;
 
 		for (int i = 0; i < roman_numeral_max; ++i)
 		{
-			if (strcmp(ctx->read_ptr - 1, roman_lower_strings[i]) == 0)
+			if (strncmp(ctx->read_ptr - 1, roman_upper_strings[i], len) == 0)
 			{
 				line->index = i + 1;
 				set_read_ptr(ctx, current);
@@ -452,7 +421,7 @@ static char tokenise_ordered_list_letter(tokenise_context* ctx, char c, bool blo
 	if (ctx->read_ptr[0] == '.' && ctx->read_ptr[1] == ' ')
 	{
 		line_token* line = add_line_token(ctx, line_token_type_ordered_list_letter);
-		line->index = c - 'a';
+		line->index = c - 'a' + 1;
 
 		set_read_ptr(ctx, ctx->read_ptr + 2);
 
@@ -515,60 +484,29 @@ static void tokenise(char* data, line_tokens* out_tokens)
 	char c = get_filtered_char(&ctx);
 	for (;;)
 	{
-		switch (c)
-		{
-		case 0:
-			out_tokens->lines = ctx.lines;
-			out_tokens->count = ctx.line_count;
-			return;
-		case '[':
+		if (c == 0)
+			break;
+		else if (c == '[')
 			c = tokenise_metadata(&ctx, c);
-			break;
-		case '\t':
+		else if (c == '\t')
 			c = tokenise_blockquote(&ctx, c);
-			break;
-		case '\n':
+		else if (c == '\n')
 			c = tokenise_newline(&ctx, c, false);
-			break;
-		case '#':
+		else if (c == '#')
 			c = tokenise_heading(&ctx, c);
-			break;
-		case '*':
+		else if (c == '*')
 			c = tokenise_unordered_list(&ctx, c);
-			break;
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
+		else if (c >= '1' && c <= '9')
 			c = tokenise_ordered_list_arabic(&ctx, c);
-			break;
-		case 'I':
-		case 'V':
-		case 'X':
-			c = tokenise_ordered_list_roman_upper(&ctx, c);
-			break;
-		case 'i':
-		case 'v':
-		case 'x':
-			c = tokenise_ordered_list_roman_lower(&ctx, c);
-			break;
-		case 'a':
-		case 'b':
-		case 'c':
-		case 'd':
-		case 'e':
-		case 'f':
-		case 'g':
-		case 'h':
+		else if (c >= 'a' && c <= 'z')
 			c = tokenise_ordered_list_letter(&ctx, c, false);
-			break;
-		default:
+		else if (c == 'I' || c == 'V' || c == 'X')
+			c = tokenise_ordered_list_roman(&ctx, c);
+		else
 			c = tokenise_paragraph(&ctx, c, false);
-		}
 	}
+
+	add_line_token(&ctx, line_token_type_eof);
+	out_tokens->lines = ctx.lines;
+	out_tokens->count = ctx.line_count;
 }

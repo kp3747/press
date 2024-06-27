@@ -37,7 +37,6 @@ typedef struct
 	uint32_t		line;
 	const char*		text;
 	uint32_t		index;
-	//uint32_t		offset;
 	uint32_t		length;
 	uint32_t		padding[2];
 } line_token;
