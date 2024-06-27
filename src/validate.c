@@ -22,6 +22,7 @@ static void handle_validate_error(validate_context* ctx, const char* format, ...
 
 	fputc('\n', stderr);
 
+	assert(false);
 	exit(EXIT_FAILURE);
 }
 
@@ -35,15 +36,6 @@ static line_token* validate_get_next_token(validate_context* ctx)
 	return token;
 }
 
-static line_token* validate_newline(validate_context* ctx, line_token* token)
-{
-	line_token* next = validate_get_next_token(ctx);
-	if (next->type == line_token_type_newline)
-		handle_validate_error(ctx, "Extra blank lines are not permitted.");
-
-	return next;
-}
-
 // TODO: Parse metadata
 static line_token* validate_metadata(validate_context* ctx, line_token* token)
 {
@@ -52,12 +44,12 @@ static line_token* validate_metadata(validate_context* ctx, line_token* token)
 
 static line_token* validate_paragraph(validate_context* ctx, line_token* token)
 {
-	ctx->token_count += 3;
+	ctx->element_count += 3;
 
 	token = validate_get_next_token(ctx);
 	while (token->type == line_token_type_paragraph)
 	{
-		ctx->token_count += 2;
+		ctx->element_count += 2;
 		token = validate_get_next_token(ctx);
 	}
 
@@ -73,7 +65,7 @@ static line_token* validate_heading(validate_context* ctx, line_token* token)
 	assert(level >= 0);
 	assert(level < 3);
 
-	++ctx->token_count;
+	++ctx->element_count;
 
 	if (level == 0)
 		++ctx->chapter_count;
@@ -98,7 +90,7 @@ static line_token* validate_reference(validate_context* ctx, line_token* token)
 
 static line_token* validate_preformatted(validate_context* ctx, line_token* token)
 {
-	++ctx->token_count;
+	++ctx->element_count;
 
 	line_token* next = validate_get_next_token(ctx);
 	if (next->type != line_token_type_newline)
@@ -109,6 +101,8 @@ static line_token* validate_preformatted(validate_context* ctx, line_token* toke
 
 static line_token* validate_block_newline(validate_context* ctx, line_token* token)
 {
+	++ctx->element_count;
+
 	token = validate_get_next_token(ctx);
 	if (token->type != line_token_type_block_paragraph)
 		handle_validate_error(ctx, "Blank lines within block quotes must be followed by an indented paragraph.");
@@ -118,10 +112,10 @@ static line_token* validate_block_newline(validate_context* ctx, line_token* tok
 
 static line_token* validate_block_paragraph(validate_context* ctx, line_token* token)
 {
-	ctx->token_count += 2;
+	ctx->element_count += 2;
 
 	token = validate_get_next_token(ctx);
-	if (token->type != line_token_type_block_paragraph || token->type != line_token_type_block_newline)
+	if (token->type != line_token_type_block_paragraph && token->type != line_token_type_block_newline && token->type != line_token_type_newline)
 		handle_validate_error(ctx, "Block quotes must be followed by a blank indented line.");
 
 	return token;
@@ -129,7 +123,7 @@ static line_token* validate_block_paragraph(validate_context* ctx, line_token* t
 
 static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 {
-	ctx->token_count += 5;
+	ctx->element_count += 5;
 
 	token = validate_get_next_token(ctx);
 	for (;;)
@@ -166,9 +160,6 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			out_mem_req->reference_count = ctx.reference_count;
 			out_mem_req->translator_count = ctx.translator_count;
 			return;
-		case line_token_type_newline:
-			token = validate_newline(&ctx, token);
-			break;
 		case line_token_type_metadata:
 			token = validate_metadata(&ctx, token);
 			break;
@@ -193,7 +184,7 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			token = validate_blockquote(&ctx, token);
 			break;
 		default:
-			assert(false);
+			token = validate_get_next_token(&ctx);
 		}
 	}
 }

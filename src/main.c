@@ -60,5 +60,11 @@ int main(int argc, const char** argv)
 	line_tokens tokens;
 	tokenise(text, &tokens);
 
+	doc_mem_req mem_req;
+	validate(&tokens, &mem_req);
+
+	document doc;
+	finalise(&tokens, &mem_req, &doc);
+
 	return EXIT_SUCCESS;
 }

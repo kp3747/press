@@ -25,10 +25,10 @@ static line_token* finalise_get_next_token(finalise_context* ctx)
 
 static void finalise_add_element(finalise_context* ctx, document_element_type type, const char* text)
 {
-	assert(ctx->element_count < ctx->element_count);
+	assert(ctx->current_element < ctx->element_count);
 
 	const uint32_t element_index = ctx->current_chapter->element_count++;
-	++ctx->element_count;
+	++ctx->current_element;
 
 	document_element* element = &ctx->current_chapter->elements[element_index];
 	element->type = type;
@@ -48,16 +48,22 @@ static line_token* finalise_heading_1(finalise_context* ctx, line_token* token)
 	ctx->current_chapter = chapter;
 
 	finalise_add_element(ctx, document_element_type_heading_1, token->text);
+
+	return finalise_get_next_token(ctx);
 }
 
 static line_token* finalise_heading_2(finalise_context* ctx, line_token* token)
 {
 	finalise_add_element(ctx, document_element_type_heading_2, token->text);
+
+	return finalise_get_next_token(ctx);
 }
 
 static line_token* finalise_heading_3(finalise_context* ctx, line_token* token)
 {
 	finalise_add_element(ctx, document_element_type_heading_3, token->text);
+
+	return finalise_get_next_token(ctx);
 }
 
 static line_token* finalise_paragraph(finalise_context* ctx, line_token* token)
@@ -74,6 +80,8 @@ static line_token* finalise_paragraph(finalise_context* ctx, line_token* token)
 	}
 
 	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+
+	return token;
 }
 
 static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
@@ -84,6 +92,7 @@ static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
 	{
 		if (token->type == line_token_type_block_newline)
 		{
+			token = finalise_get_next_token(ctx);
 		}
 		else if (token->type == line_token_type_block_paragraph)
 		{
@@ -147,7 +156,6 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 
 	out_doc->metadata.author_count = mem_req->author_count;
 	out_doc->metadata.translator_count = mem_req->translator_count;
-	//out_doc->chapter_count = mem_req->chapter_count;
 
 	finalise_context ctx = {
 		.doc				= out_doc,
@@ -168,6 +176,7 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 		switch (token->type)
 		{
 		case line_token_type_eof:
+			assert(ctx.current_element == ctx.element_count);
 			return;
 		case line_token_type_metadata:
 			//token = finalise_metadata(&ctx, token);
