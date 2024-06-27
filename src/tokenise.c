@@ -1,19 +1,18 @@
 typedef struct
 {
-	char*			buffer;
-	const char*		read_ptr;
-	char*			write_ptr;
-	line_token*		current_line;
-	line_token*		lines;
-	uint32_t		line_count;
-	uint32_t		line_capacity;
-	uint32_t		line;
-	uint32_t		column;
-	uint32_t		next_line;
-	uint32_t		next_column;
-	char			c;
-	char			pc;
-	//line_token_type	previous_line_type;
+	char*		buffer;
+	const char*	read_ptr;
+	char*		write_ptr;
+	line_token*	current_line;
+	line_token*	lines;
+	uint32_t	line_count;
+	uint32_t	line_capacity;
+	uint32_t	line;
+	uint32_t	column;
+	uint32_t	next_line;
+	uint32_t	next_column;
+	char		c;
+	char		pc;
 } tokenise_context;
 
 static uint32_t arabic_to_int(const char* str, char terminator)
@@ -51,11 +50,6 @@ static void handle_tokenise_error(tokenise_context* ctx, const char* format, ...
 	exit(EXIT_FAILURE);
 }
 
-//static uint32_t get_offset(tokenise_context* ctx)
-//{
-//	return (uint32_t)(ctx->buffer - ctx->write_ptr);
-//}
-
 static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 {
 	line_token* line;
@@ -74,7 +68,6 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	line->type = type;
 	line->line = ctx->line;
 	line->text = ctx->write_ptr;
-	//line->offset = (uint32_t)(ctx->buffer - ctx->write_ptr);
 
 #ifndef NDEBUG
 	if (type == line_token_type_newline || type == line_token_type_eof)
@@ -433,13 +426,14 @@ static char tokenise_ordered_list_letter(tokenise_context* ctx, char c, bool blo
 
 static char tokenise_unordered_list(tokenise_context* ctx, char c)
 {
-	c = get_filtered_char(ctx);
-	if (c != ' ')
-		handle_tokenise_error(ctx, "Unordered list tags '*' must be followed by a space.");
+	if (*ctx->read_ptr == ' ')
+	{
+		get_filtered_char(ctx);
+		add_line_token(ctx, line_token_type_unordered_list);
+		return tokenise_text(ctx, get_filtered_char(ctx));
+	}
 
-	add_line_token(ctx, line_token_type_unordered_list);
-
-	return tokenise_text(ctx, get_filtered_char(ctx));
+	return tokenise_paragraph(ctx, c, false);
 }
 
 static char tokenise_blockquote(tokenise_context* ctx, char c)
