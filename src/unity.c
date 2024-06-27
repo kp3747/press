@@ -3,9 +3,11 @@
 #include "tokenise.h"
 #include "validate.h"
 #include "finalise.h"
+#include "generate.h"
 
 #include "roman_numeral.c"
 #include "main.c"
+#include "html.c"
 #include "tokenise.c"
 #include "validate.c"
 #include "finalise.c"

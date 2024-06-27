@@ -1,0 +1,1 @@
+static void generate_html(const document* doc);

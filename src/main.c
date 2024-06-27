@@ -21,6 +21,7 @@ static char* load_file(const char* filepath)
 
 	// Put data one byte past the beginning of the buffer to allow space for initial control code
 	fread(data, 1, size, f);
+	fclose(f);
 
 	// Check if final new line character needs to be added, then null terminate
 	if (data[size - 1] == '\n')
@@ -65,6 +66,8 @@ int main(int argc, const char** argv)
 
 	document doc;
 	finalise(&tokens, &mem_req, &doc);
+
+	generate_html(&doc);
 
 	return EXIT_SUCCESS;
 }
