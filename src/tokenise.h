@@ -20,14 +20,16 @@ typedef enum
 
 typedef enum
 {
-	text_token_type_strong,
 	text_token_type_en_dash,
 	text_token_type_em_dash,
-	text_token_type_emphasis,
 	text_token_type_reference,
+	text_token_type_strong_end,
+	text_token_type_emphasis_end,
+	text_token_type_preformatted,
+	text_token_type_strong_begin,
+	text_token_type_emphasis_begin,
 	text_token_type_quote_level_1_begin,
-	text_token_type_quote_level_1_end,
-	text_token_type_preformatted
+	text_token_type_quote_level_1_end
 } text_token_type;
 
 typedef struct

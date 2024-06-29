@@ -15,6 +15,13 @@ typedef struct
 	char		pc;
 } tokenise_context;
 
+typedef enum
+{
+	emphasis_state_none,
+	emphasis_state_strong,
+	emphasis_state_emphasis
+} emphasis_state;
+
 static uint32_t arabic_to_int(const char* str, char terminator)
 {
 	uint32_t digits[10];
@@ -216,7 +223,7 @@ static bool check_space(tokenise_context* ctx, char c)
 	return false;
 }
 
-static bool check_emphasis(tokenise_context* ctx, char c)
+static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 {
 	if (c == '*')
 	{
@@ -225,12 +232,39 @@ static bool check_emphasis(tokenise_context* ctx, char c)
 			if (ctx->read_ptr[1] == '*')
 				handle_tokenise_error(ctx, "Only two levels of '*' allowed.");
 
-			put_text_token(ctx, text_token_type_strong);
+			if (*state == emphasis_state_none)
+			{
+				put_text_token(ctx, text_token_type_strong_begin);
+				*state = emphasis_state_strong;
+			}
+			else if (*state == emphasis_state_strong)
+			{
+				put_text_token(ctx, text_token_type_strong_end);
+				*state = emphasis_state_none;
+			}
+			else
+			{
+				handle_tokenise_error(ctx, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
+			}
+
 			get_filtered_char(ctx);
 		}
 		else
 		{
-			put_text_token(ctx, text_token_type_emphasis);
+			if (*state == emphasis_state_none)
+			{
+				put_text_token(ctx, text_token_type_emphasis_begin);
+				*state = emphasis_state_emphasis;
+			}
+			else if (*state == emphasis_state_emphasis)
+			{
+				put_text_token(ctx, text_token_type_emphasis_end);
+				*state = emphasis_state_none;
+			}
+			else
+			{
+				handle_tokenise_error(ctx, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
+			}
 		}
 
 		return true;
@@ -290,6 +324,7 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		handle_tokenise_error(ctx, "Leading spaces are not permitted.");
 
 	int quote_level = 0;
+	emphasis_state em_state = emphasis_state_none;
 
 	for (;;)
 	{
@@ -313,7 +348,7 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		if (check_space(ctx, c))
 		{
 		}
-		else if (check_emphasis(ctx, c))
+		else if (check_emphasis(ctx, c, &em_state))
 		{
 		}
 		else if (check_dash(ctx, c))
@@ -333,6 +368,11 @@ static char tokenise_text(tokenise_context* ctx, char c)
 
 	if (quote_level != 0)
 		handle_tokenise_error(ctx, "Unterminated quote.");
+
+	if (em_state == emphasis_state_strong)
+		handle_tokenise_error(ctx, "Unterminated strong markup \"**\".");
+	else if (em_state == emphasis_state_emphasis)
+		handle_tokenise_error(ctx, "Unterminated emphasis markup '*'.");
 
 	return get_filtered_char(ctx);
 }

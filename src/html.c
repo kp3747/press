@@ -10,7 +10,23 @@ static void print_text_block(FILE* f, const char* text)
 {
 	while (*text)
 	{
-		if (*text == text_token_type_en_dash)
+		if (*text == text_token_type_strong_begin)
+		{
+			fputs("<strong>", f);
+		}
+		else if (*text == text_token_type_strong_end)
+		{
+			fputs("</strong>", f);
+		}
+		if (*text == text_token_type_emphasis_begin)
+		{
+			fputs("<em>", f);
+		}
+		else if (*text == text_token_type_emphasis_end)
+		{
+			fputs("</em>", f);
+		}
+		else if (*text == text_token_type_en_dash)
 		{
 			fputc(0xE2, f);
 			fputc(0x80, f);
@@ -62,11 +78,16 @@ static void generate_html(const document* doc)
 
 	fprintf(f,
 		"<!DOCTYPE html>\n"
-		"<html>\n"
-		"\t<body>"
+		"<html lang=\"en-GB\">\n"
+		"<head>\n"
+		"\t<meta charset=\"UTF-8\">\n"
+		"\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+		"\t<link href=\"style.css\" rel=\"stylesheet\">\n"
+		"</head>\n"
+		"<body>"
 	);
 
-	int depth = 2;
+	int depth = 1;
 
 	for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
 	{
