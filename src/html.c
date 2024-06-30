@@ -79,15 +79,15 @@ static void generate_html(const document* doc)
 	fprintf(f,
 		"<!DOCTYPE html>\n"
 		"<html lang=\"en-GB\">\n"
-		"<head>\n"
-		"\t<meta charset=\"UTF-8\">\n"
-		"\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
-		"\t<link href=\"style.css\" rel=\"stylesheet\">\n"
-		"</head>\n"
-		"<body>"
+		"\t<head>\n"
+		"\t\t<meta charset=\"UTF-8\">\n"
+		"\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
+		"\t</head>\n"
+		"\t<body>"
 	);
 
-	int depth = 1;
+	int depth = 2;
 
 	for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
 	{
