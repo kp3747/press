@@ -13,6 +13,7 @@ typedef struct
 	uint32_t	next_column;
 	char		c;
 	char		pc;
+	uint32_t	ref_count;
 } tokenise_context;
 
 typedef enum
@@ -333,19 +334,41 @@ static char tokenise_text(tokenise_context* ctx, char c)
 			if (quote_level == 0)
 			{
 				put_text_token(ctx, text_token_type_quote_level_1_begin);
-				c = get_filtered_char(ctx);
-				
 				quote_level = 1;
 			}
 			else if (quote_level == 1)
 			{
 				put_text_token(ctx, text_token_type_quote_level_1_end);
-				c = get_filtered_char(ctx);
-
 				quote_level = 0;
 			}
 		}
-		if (check_space(ctx, c))
+		else if (c == '[')
+		{
+			const char* begin = ctx->read_ptr;
+
+			c = get_filtered_char(ctx);
+			if (c == ']')
+				handle_tokenise_error(ctx, "Inline references may not be empty.");
+			if (c == '0')
+				handle_tokenise_error(ctx, "References must begin from 1.");
+
+			do
+			{
+				if (c < '0' || c > '9')
+					handle_tokenise_error(ctx, "References may only contain numbers.");
+
+				c = get_filtered_char(ctx);
+			} while (c != ']');
+
+			const uint32_t index = arabic_to_int(begin, ']');
+			++ctx->ref_count;
+
+			if (index != ctx->ref_count)
+				handle_tokenise_error(ctx, "Expected reference number %d.", ctx->ref_count);
+
+			put_text_token(ctx, text_token_type_reference);
+		}
+		else if (check_space(ctx, c))
 		{
 		}
 		else if (check_emphasis(ctx, c, &em_state))
@@ -404,7 +427,9 @@ static char tokenise_heading(tokenise_context* ctx, char c)
 		c = get_filtered_char(ctx);
 	} while (c == '#');
 
-	if (depth > 2)
+	if (depth == 0)
+		ctx->ref_count = 0;
+	else if (depth > 2)
 		handle_tokenise_error(ctx, "Exceeded maximum heading depth of 3.");
 
 	if (c != ' ')
@@ -515,8 +540,38 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	return c;
 }
 
-static char tokenise_metadata(tokenise_context* ctx, char c)
+static char tokenise_bracket(tokenise_context* ctx, char c)
 {
+	c = get_filtered_char(ctx);
+	if (c == ']')
+	{
+		handle_tokenise_error(ctx, "Empty brackets \"[]\" are not permitted.");
+	}
+	else if (c == '0')
+	{
+		handle_tokenise_error(ctx, "References must begin from 1, and metadata must not begin with a number.");
+	}
+	else if (c >= '1' && c <= '9')
+	{
+		const char* current = ctx->read_ptr;
+
+		while (*current >= '0' && *current <= '9')
+			++current;
+
+		if (*current++ != ']')
+			handle_tokenise_error(ctx, "References may only contain numbers.");
+		else if (*current++ != ' ')
+			handle_tokenise_error(ctx, "References must be followed by a space.");
+
+		line_token* line = add_line_token(ctx, line_token_type_reference);
+		line->index = arabic_to_int(ctx->read_ptr - 1, ']');
+
+		set_read_ptr(ctx, current);
+
+		c = tokenise_text(ctx, get_filtered_char(ctx));
+		return c;
+	}
+
 	// Just skip for now
 	do
 	{
@@ -545,7 +600,7 @@ static void tokenise(char* data, line_tokens* out_tokens)
 		if (c == 0)
 			break;
 		else if (c == '[')
-			c = tokenise_metadata(&ctx, c);
+			c = tokenise_bracket(&ctx, c);
 		else if (c == '\t')
 			c = tokenise_blockquote(&ctx, c);
 		else if (c == '\n')
@@ -563,6 +618,9 @@ static void tokenise(char* data, line_tokens* out_tokens)
 		else
 			c = tokenise_paragraph(&ctx, c, false);
 	}
+
+	// Make later parsing simpler
+	add_line_token(&ctx, line_token_type_newline);
 
 	add_line_token(&ctx, line_token_type_eof);
 	out_tokens->lines = ctx.lines;

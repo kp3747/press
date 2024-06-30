@@ -20,6 +20,7 @@ typedef enum
 
 typedef enum
 {
+	text_token_type_null,
 	text_token_type_en_dash,
 	text_token_type_em_dash,
 	text_token_type_reference,

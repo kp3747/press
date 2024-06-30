@@ -27,12 +27,23 @@ static void finalise_add_element(finalise_context* ctx, document_element_type ty
 {
 	assert(ctx->current_element < ctx->element_count);
 
-	const uint32_t element_index = ctx->current_chapter->element_count++;
+	const uint32_t index = ctx->current_chapter->element_count++;
 	++ctx->current_element;
 
-	document_element* element = &ctx->current_chapter->elements[element_index];
+	document_element* element = &ctx->current_chapter->elements[index];
 	element->type = type;
 	element->text = text;
+}
+
+static void finalise_add_reference(finalise_context* ctx, const char* text)
+{
+	assert(ctx->current_reference < ctx->reference_count);
+
+	const uint32_t index = ctx->current_chapter->reference_count++;
+	++ctx->current_reference;
+
+	document_reference* reference = &ctx->current_chapter->references[index];
+	reference->text = text;
 }
 
 static line_token* finalise_heading_1(finalise_context* ctx, line_token* token)
@@ -137,6 +148,13 @@ static line_token* finalise_ordered_list(finalise_context* ctx, line_token* toke
 	return token;
 }
 
+static line_token* finalise_reference(finalise_context* ctx, line_token* token)
+{
+	finalise_add_reference(ctx, token->text);
+
+	return finalise_get_next_token(ctx);
+}
+
 static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* out_doc)
 {
 	const size_t author_size = sizeof(const char*) * mem_req->author_count;
@@ -211,7 +229,7 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			token = finalise_heading_3(&ctx, token);
 			break;
 		case line_token_type_reference:
-			//token = finalise_reference(&ctx, token);
+			token = finalise_reference(&ctx, token);
 			break;
 		case line_token_type_preformatted:
 			//token = finalise_preformatted(&ctx, token);
