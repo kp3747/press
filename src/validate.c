@@ -36,8 +36,7 @@ static line_token* validate_get_next_token(validate_context* ctx)
 	return token;
 }
 
-// TODO: Parse metadata
-static line_token* validate_metadata(validate_context* ctx, line_token* token)
+static line_token* validate_metadata_title(validate_context* ctx, line_token* token)
 {
 	return validate_get_next_token(ctx);
 }
@@ -177,8 +176,8 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			out_mem_req->reference_count = ctx.reference_count;
 			out_mem_req->translator_count = ctx.translator_count;
 			return;
-		case line_token_type_metadata:
-			token = validate_metadata(&ctx, token);
+		case line_token_type_metadata_title:
+			token = validate_metadata_title(&ctx, token);
 			break;
 		case line_token_type_paragraph:
 			token = validate_paragraph(&ctx, token);

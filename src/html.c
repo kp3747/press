@@ -61,7 +61,6 @@ static void print_text_simple(html_context* ctx, const char* text)
 	}
 }
 
-
 static void print_text_block(html_context* ctx, const char* text)
 {
 	while (*text)
@@ -160,6 +159,11 @@ static void generate_html(const document* doc)
 		"\t</head>\n"
 		"\t<body>"
 	);
+
+	if (doc->metadata.title)
+	{
+		fprintf(f, "\n\t\t<h1 class=\"title\">%s</h1>", doc->metadata.title);
+	}
 
 	if (doc->chapter_count > 1)
 	{

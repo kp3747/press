@@ -213,8 +213,9 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 		case line_token_type_eof:
 			assert(ctx.current_element == ctx.element_count);
 			return;
-		case line_token_type_metadata:
-			//token = finalise_metadata(&ctx, token);
+		case line_token_type_metadata_title:
+			out_doc->metadata.title = token->text;
+			token = finalise_get_next_token(&ctx);
 			break;
 		case line_token_type_paragraph:
 			token = finalise_paragraph(&ctx, token);

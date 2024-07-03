@@ -540,6 +540,68 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	return c;
 }
 
+static void tokenise_eat_whitespace(tokenise_context* ctx)
+{
+	const char* current = ctx->read_ptr;
+	for (;;)
+	{
+		if (*current == ' ')
+		{
+		}
+		else if (*current == '\t')
+		{
+		}
+		else if (*current == '\n')
+		{
+			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
+		}
+		else if (*current < 32)
+		{
+			handle_tokenise_error(ctx, "Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.");
+		}
+		else
+		{
+			set_read_ptr(ctx, current);
+			return;
+		}
+
+		++current;
+	}
+}
+
+static bool tokenise_metadata_title(tokenise_context* ctx, char* c)
+{
+	const char title_test[] = "Title:";
+	const uint32_t title_len = sizeof(title_test) - 1;
+
+	if (strncmp(&ctx->read_ptr[-1], title_test, title_len) == 0)
+	{
+		set_read_ptr(ctx, ctx->read_ptr + title_len);
+		tokenise_eat_whitespace(ctx);
+		add_line_token(ctx, line_token_type_metadata_title);
+
+		for (;;)
+		{
+			*c = get_char(ctx);
+			if (*c == '\n')
+			{
+				handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
+			}
+			else if (*c == ']')
+			{
+				put_char(ctx, 0);
+				break;
+			}
+
+			put_char(ctx, *c);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 static char tokenise_bracket(tokenise_context* ctx, char c)
 {
 	c = get_filtered_char(ctx);
@@ -569,17 +631,28 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 		set_read_ptr(ctx, current);
 
 		c = tokenise_text(ctx, get_filtered_char(ctx));
-		return c;
 	}
-
-	// Just skip for now
-	do
+	else
 	{
-		c = get_filtered_char(ctx);
-	} while (c != '\n');
+		if (tokenise_metadata_title(ctx, &c))
+		{
+		}
+		else
+		{
+			// Just skip for now
+			do
+			{
+				c = get_filtered_char(ctx);
+			} while (c != ']');
+		}
 
-	// Consume '\n'
-	c = get_filtered_char(ctx);
+		// Make sure metadata is followed by a new line
+		c = get_filtered_char(ctx);
+		if (c != '\n')
+			handle_tokenise_error(ctx, "Metadata tags \"[...]\" must be followed by a new line.");
+
+		c = get_filtered_char(ctx);
+	}
 
 	return c;
 }
