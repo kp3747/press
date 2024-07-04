@@ -157,37 +157,23 @@ static line_token* validate_metadata_title(validate_context* ctx, line_token* to
 	return validate_get_next_token(ctx);
 }
 
-//static line_token* validate_metadata_string(validate_context* ctx, line_token* token, uint32_t* count)
-//{
-//}
-//
-//static line_token* validate_metadata_string_list(validate_context* ctx, line_token* token, uint32_t* count)
-//{
-//}
-
-static line_token* validate_metadata_author(validate_context* ctx, line_token* token)
+static line_token* validate_metadata_string(validate_context* ctx, line_token* token, uint32_t* count)
 {
-	if (ctx->author_count)
-		handle_validate_error(ctx, "Only one \"Author\" or \"Authors\" metadata element allowed.");
-
-	ctx->author_count = 1;
+	*count = 1;
 
 	return validate_get_next_token(ctx);
 }
 
-static line_token* validate_metadata_authors(validate_context* ctx, line_token* token)
+static line_token* validate_metadata_string_list(validate_context* ctx, line_token* token, uint32_t* count)
 {
-	if (ctx->author_count)
-		handle_validate_error(ctx, "Only one \"Author\" or \"Authors\" metadata element allowed.");
-
-	ctx->author_count = 1;
+	*count = 1;
 
 	const char* current = token->text;
 	while (*current)
 	{
 		if (*current == ',')
 		{
-			++ctx->author_count;
+			++(*count);
 
 			++current;
 			if (*current != ' ')
@@ -204,6 +190,38 @@ static line_token* validate_metadata_authors(validate_context* ctx, line_token* 
 	}
 
 	return validate_get_next_token(ctx);
+}
+
+static line_token* validate_metadata_author(validate_context* ctx, line_token* token)
+{
+	if (ctx->author_count)
+		handle_validate_error(ctx, "Only one \"Author\" or \"Authors\" metadata element allowed.");
+
+	return validate_metadata_string(ctx, token, &ctx->author_count);
+}
+
+static line_token* validate_metadata_authors(validate_context* ctx, line_token* token)
+{
+	if (ctx->author_count)
+		handle_validate_error(ctx, "Only one \"Author\" or \"Authors\" metadata element allowed.");
+
+	return validate_metadata_string_list(ctx, token, &ctx->author_count);
+}
+
+static line_token* validate_metadata_translator(validate_context* ctx, line_token* token)
+{
+	if (ctx->translator_count)
+		handle_validate_error(ctx, "Only one \"Translator\" or \"Translators\" metadata element allowed.");
+
+	return validate_metadata_string(ctx, token, &ctx->translator_count);
+}
+
+static line_token* validate_metadata_translators(validate_context* ctx, line_token* token)
+{
+	if (ctx->translator_count)
+		handle_validate_error(ctx, "Only one \"Translator\" or \"Translators\" metadata element allowed.");
+
+	return validate_metadata_string_list(ctx, token, &ctx->translator_count);
 }
 
 static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
@@ -233,6 +251,12 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			break;
 		case line_token_type_metadata_authors:
 			token = validate_metadata_authors(&ctx, token);
+			break;
+		case line_token_type_metadata_translator:
+			token = validate_metadata_translator(&ctx, token);
+			break;
+		case line_token_type_metadata_translators:
+			token = validate_metadata_translators(&ctx, token);
 			break;
 		case line_token_type_paragraph:
 			token = validate_paragraph(&ctx, token);

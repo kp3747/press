@@ -176,6 +176,18 @@ static void generate_html(const document* doc)
 		fprintf(f, "\n\t\t</p>");
 	}
 
+	if (doc->metadata.translator_count)
+	{
+		fprintf(f, "\n\t\t<p class=\"authors\">");
+		fprintf(f, "\n\t\t\tTranslated by:<br>");
+
+		for (uint32_t i = 0; i < doc->metadata.translator_count - 1; ++i)
+			fprintf(f, "\n\t\t\t%s<br>", doc->metadata.translators[i]);
+		fprintf(f, "\n\t\t\t%s", doc->metadata.translators[doc->metadata.translator_count - 1]);
+
+		fprintf(f, "\n\t\t</p>");
+	}
+
 	if (doc->chapter_count > 1)
 	{
 		fprintf(f,

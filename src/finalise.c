@@ -162,20 +162,19 @@ static line_token* finalise_metadata_title(finalise_context* ctx, line_token* to
 	return finalise_get_next_token(ctx);
 }
 
-static line_token* finalise_metadata_author(finalise_context* ctx, line_token* token)
+static line_token* finalise_metadata_string(finalise_context* ctx, line_token* token, const char*** list, uint32_t* count)
 {
-	assert(ctx->doc->metadata.author_count == 1);
-	assert(ctx->doc->metadata.authors[0] == nullptr);
+	assert(*count == 1);
 
-	ctx->doc->metadata.authors[0] = token->text;
+	(*list)[0] = token->text;
 
 	return finalise_get_next_token(ctx);
 }
 
-static line_token* finalise_metadata_authors(finalise_context* ctx, line_token* token)
+static line_token* finalise_metadata_string_list(finalise_context* ctx, line_token* token, const char*** list, uint32_t* count)
 {
 	// Add first author
-	ctx->doc->metadata.authors[0] = token->text;
+	(*list)[0] = token->text;
 
 	uint32_t index = 1;
 	char* current = token->text;
@@ -188,15 +187,35 @@ static line_token* finalise_metadata_authors(finalise_context* ctx, line_token* 
 			*current = 0;
 			current += 2;
 
-			ctx->doc->metadata.authors[index++] = current;
+			(*list)[index++] = current;
 		}
 
 		++current;
 	}
 
-	assert(index == ctx->doc->metadata.author_count);
+	assert(index == *count);
 
 	return finalise_get_next_token(ctx);
+}
+
+static line_token* finalise_metadata_author(finalise_context* ctx, line_token* token)
+{
+	return finalise_metadata_string(ctx, token, &ctx->doc->metadata.authors, &ctx->doc->metadata.author_count);
+}
+
+static line_token* finalise_metadata_authors(finalise_context* ctx, line_token* token)
+{
+	return finalise_metadata_string_list(ctx, token, &ctx->doc->metadata.authors, &ctx->doc->metadata.author_count);
+}
+
+static line_token* finalise_metadata_translator(finalise_context* ctx, line_token* token)
+{
+	return finalise_metadata_string(ctx, token, &ctx->doc->metadata.translators, &ctx->doc->metadata.translator_count);
+}
+
+static line_token* finalise_metadata_translators(finalise_context* ctx, line_token* token)
+{
+	return finalise_metadata_string_list(ctx, token, &ctx->doc->metadata.translators, &ctx->doc->metadata.translator_count);
 }
 
 static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* out_doc)
@@ -265,6 +284,12 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			break;
 		case line_token_type_metadata_authors:
 			token = finalise_metadata_authors(&ctx, token);
+			break;
+		case line_token_type_metadata_translator:
+			token = finalise_metadata_translator(&ctx, token);
+			break;
+		case line_token_type_metadata_translators:
+			token = finalise_metadata_translators(&ctx, token);
 			break;
 		case line_token_type_paragraph:
 			token = finalise_paragraph(&ctx, token);
