@@ -43,7 +43,7 @@ typedef struct
 {
 	line_token_type	type;
 	uint32_t		line;
-	const char*		text;
+	char*			text;
 	uint32_t		index;
 	uint32_t		length;
 	uint32_t		padding[2];

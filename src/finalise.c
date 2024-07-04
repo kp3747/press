@@ -155,6 +155,50 @@ static line_token* finalise_reference(finalise_context* ctx, line_token* token)
 	return finalise_get_next_token(ctx);
 }
 
+static line_token* finalise_metadata_title(finalise_context* ctx, line_token* token)
+{
+	ctx->doc->metadata.title = token->text;
+
+	return finalise_get_next_token(ctx);
+}
+
+static line_token* finalise_metadata_author(finalise_context* ctx, line_token* token)
+{
+	assert(ctx->doc->metadata.author_count == 1);
+	assert(ctx->doc->metadata.authors[0] == nullptr);
+
+	ctx->doc->metadata.authors[0] = token->text;
+
+	return finalise_get_next_token(ctx);
+}
+
+static line_token* finalise_metadata_authors(finalise_context* ctx, line_token* token)
+{
+	// Add first author
+	ctx->doc->metadata.authors[0] = token->text;
+
+	uint32_t index = 1;
+	char* current = token->text;
+
+	while (*current)
+	{
+		if (*current == ',')
+		{
+			// Null terminate and skip space
+			*current = 0;
+			current += 2;
+
+			ctx->doc->metadata.authors[index++] = current;
+		}
+
+		++current;
+	}
+
+	assert(index == ctx->doc->metadata.author_count);
+
+	return finalise_get_next_token(ctx);
+}
+
 static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* out_doc)
 {
 	const size_t author_size = sizeof(const char*) * mem_req->author_count;
@@ -214,8 +258,13 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			assert(ctx.current_element == ctx.element_count);
 			return;
 		case line_token_type_metadata_title:
-			out_doc->metadata.title = token->text;
-			token = finalise_get_next_token(&ctx);
+			token = finalise_metadata_title(&ctx, token);
+			break;
+		case line_token_type_metadata_author:
+			token = finalise_metadata_author(&ctx, token);
+			break;
+		case line_token_type_metadata_authors:
+			token = finalise_metadata_authors(&ctx, token);
 			break;
 		case line_token_type_paragraph:
 			token = finalise_paragraph(&ctx, token);

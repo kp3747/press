@@ -165,6 +165,17 @@ static void generate_html(const document* doc)
 		fprintf(f, "\n\t\t<h1 class=\"title\">%s</h1>", doc->metadata.title);
 	}
 
+	if (doc->metadata.author_count)
+	{
+		fprintf(f, "\n\t\t<p class=\"authors\">");
+
+		for (uint32_t i = 0; i < doc->metadata.author_count - 1; ++i)
+			fprintf(f, "\n\t\t\t%s<br>", doc->metadata.authors[i]);
+		fprintf(f, "\n\t\t\t%s", doc->metadata.authors[doc->metadata.author_count - 1]);
+
+		fprintf(f, "\n\t\t</p>");
+	}
+
 	if (doc->chapter_count > 1)
 	{
 		fprintf(f,

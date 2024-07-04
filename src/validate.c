@@ -36,11 +36,6 @@ static line_token* validate_get_next_token(validate_context* ctx)
 	return token;
 }
 
-static line_token* validate_metadata_title(validate_context* ctx, line_token* token)
-{
-	return validate_get_next_token(ctx);
-}
-
 static line_token* validate_paragraph(validate_context* ctx, line_token* token)
 {
 	ctx->element_count += 3;
@@ -157,6 +152,60 @@ static line_token* validate_ordered_list(validate_context* ctx, line_token* toke
 	return token;
 }
 
+static line_token* validate_metadata_title(validate_context* ctx, line_token* token)
+{
+	return validate_get_next_token(ctx);
+}
+
+//static line_token* validate_metadata_string(validate_context* ctx, line_token* token, uint32_t* count)
+//{
+//}
+//
+//static line_token* validate_metadata_string_list(validate_context* ctx, line_token* token, uint32_t* count)
+//{
+//}
+
+static line_token* validate_metadata_author(validate_context* ctx, line_token* token)
+{
+	if (ctx->author_count)
+		handle_validate_error(ctx, "Only one \"Author\" or \"Authors\" metadata element allowed.");
+
+	ctx->author_count = 1;
+
+	return validate_get_next_token(ctx);
+}
+
+static line_token* validate_metadata_authors(validate_context* ctx, line_token* token)
+{
+	if (ctx->author_count)
+		handle_validate_error(ctx, "Only one \"Author\" or \"Authors\" metadata element allowed.");
+
+	ctx->author_count = 1;
+
+	const char* current = token->text;
+	while (*current)
+	{
+		if (*current == ',')
+		{
+			++ctx->author_count;
+
+			++current;
+			if (*current != ' ')
+				handle_validate_error(ctx, "Metadata lists must be separated by \", \".");
+
+			++current;
+			if (*current == 0)
+				handle_validate_error(ctx, "Metadata list item empty.");
+
+			break;
+		}
+
+		++current;
+	}
+
+	return validate_get_next_token(ctx);
+}
+
 static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 {
 	validate_context ctx = {
@@ -178,6 +227,12 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			return;
 		case line_token_type_metadata_title:
 			token = validate_metadata_title(&ctx, token);
+			break;
+		case line_token_type_metadata_author:
+			token = validate_metadata_author(&ctx, token);
+			break;
+		case line_token_type_metadata_authors:
+			token = validate_metadata_authors(&ctx, token);
 			break;
 		case line_token_type_paragraph:
 			token = validate_paragraph(&ctx, token);
