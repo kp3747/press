@@ -73,7 +73,7 @@ static void print_text_block(html_context* ctx, const char* text)
 		{
 			fputs("</strong>", ctx->f);
 		}
-		if (*text == text_token_type_emphasis_begin)
+		else if (*text == text_token_type_emphasis_begin)
 		{
 			fputs("<em>", ctx->f);
 		}
