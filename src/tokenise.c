@@ -87,15 +87,7 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	return line;
 }
 
-static void set_read_ptr(tokenise_context* ctx, const char* ptr)
-{
-	ctx->column += (uint32_t)(ptr - ctx->read_ptr);
-	ctx->read_ptr = ptr;
-	ctx->c = ptr[-1];
-	ctx->pc = ptr[-2];
-}
-
-static char get_char(tokenise_context* ctx)
+static char get_char_internal(tokenise_context* ctx)
 {
 	char c = *ctx->read_ptr++;
 
@@ -124,6 +116,8 @@ static char get_char(tokenise_context* ctx)
 			}
 			else if (c == '\t')
 			{
+				const uint32_t tab_size = 4 - ((ctx->next_column - 1) % 4);
+				ctx->next_column += tab_size;
 			}
 			else if (c == '\r')
 			{
@@ -162,15 +156,23 @@ static char get_char(tokenise_context* ctx)
 	return c;
 }
 
+static char get_char(tokenise_context* ctx)
+{
+	ctx->pc = ctx->c;
+	ctx->c = get_char_internal(ctx);
+
+	return ctx->c;
+}
+
 static char get_filtered_char(tokenise_context* ctx)
 {
 	ctx->pc = ctx->c;
 
-	char c = get_char(ctx);
+	char c = get_char_internal(ctx);
 	if (c == '/' && *ctx->read_ptr == '*')
 	{
 		// Consume '*'
-		c = get_char(ctx);
+		c = get_char_internal(ctx);
 
 		for (;;)
 		{
@@ -181,16 +183,29 @@ static char get_filtered_char(tokenise_context* ctx)
 			else if (c == '*' && *ctx->read_ptr == '/')
 			{
 				// Consume '/'
-				get_char(ctx);
-				c = get_char(ctx);
+				get_char_internal(ctx);
+				c = get_char_internal(ctx);
 				break;
 			}
 
-			c = get_char(ctx);
+			c = get_char_internal(ctx);
 		}
 	}
 
 	ctx->c = c;
+
+	return c;
+}
+
+static char advance_read_ptr(tokenise_context* ctx, size_t count)
+{
+	assert(count);
+
+	char c;
+	do
+	{
+		c = get_char(ctx);
+	} while (--count);
 
 	return c;
 }
@@ -455,7 +470,7 @@ static char tokenise_ordered_list_arabic(tokenise_context* ctx, char c)
 		line_token* line = add_line_token(ctx, line_token_type_ordered_list_arabic);
 		line->index = arabic_to_int(ctx->read_ptr - 1, '.');
 
-		set_read_ptr(ctx, current);
+		advance_read_ptr(ctx, current - ctx->read_ptr);
 
 		return tokenise_text(ctx, get_filtered_char(ctx));
 	}
@@ -486,7 +501,7 @@ static char tokenise_ordered_list_roman(tokenise_context* ctx, char c)
 			if (strncmp(ctx->read_ptr - 1, roman_upper_strings[i], len) == 0)
 			{
 				line->index = i + 1;
-				set_read_ptr(ctx, current);
+				advance_read_ptr(ctx, current - ctx->read_ptr);
 
 				return tokenise_text(ctx, get_filtered_char(ctx));
 			}
@@ -505,7 +520,7 @@ static char tokenise_ordered_list_letter(tokenise_context* ctx, char c, bool blo
 		line_token* line = add_line_token(ctx, line_token_type_ordered_list_letter);
 		line->index = c - 'a' + 1;
 
-		set_read_ptr(ctx, ctx->read_ptr + 2);
+		advance_read_ptr(ctx, 2);
 
 		return tokenise_text(ctx, get_filtered_char(ctx));
 	}
@@ -540,66 +555,111 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	return c;
 }
 
-static void tokenise_eat_whitespace(tokenise_context* ctx)
+static void tokenise_eat_metadata_spaces(tokenise_context* ctx)
 {
-	const char* current = ctx->read_ptr;
+	char c = ctx->c;
 	for (;;)
 	{
-		if (*current == ' ')
+		if (c == ' ')
 		{
 		}
-		else if (*current == '\t')
+		else if (c == '\t')
 		{
 		}
-		else if (*current == '\n')
+		else if (c == '\n')
 		{
 			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
 		}
-		else if (*current < 32)
-		{
-			handle_tokenise_error(ctx, "Unsupported control character; this error may be caused by file corruption or attempting to load a binary file.");
-		}
 		else
 		{
-			set_read_ptr(ctx, current);
 			return;
 		}
 
-		++current;
+		c = get_char(ctx);
 	}
 }
 
-static bool tokenise_metadata_title(tokenise_context* ctx, char* c)
+static void tokenise_copy_metadata_value(tokenise_context* ctx, line_token* token)
 {
-	const char title_test[] = "Title:";
-	const uint32_t title_len = sizeof(title_test) - 1;
-
-	if (strncmp(&ctx->read_ptr[-1], title_test, title_len) == 0)
+	char c = ctx->c;
+	for (;;)
 	{
-		set_read_ptr(ctx, ctx->read_ptr + title_len);
-		tokenise_eat_whitespace(ctx);
-		add_line_token(ctx, line_token_type_metadata_title);
-
-		for (;;)
+		if (c == '\n')
 		{
-			*c = get_char(ctx);
-			if (*c == '\n')
-			{
-				handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
-			}
-			else if (*c == ']')
-			{
-				put_char(ctx, 0);
-				break;
-			}
-
-			put_char(ctx, *c);
+			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
 		}
+		else if (c == '\t')
+		{
+			handle_tokenise_error(ctx, "Tabs are not permitted within metadata values.");
+		}
+		else if (c == ']')
+		{
+			put_char(ctx, 0);
+			return;
+		}
+
+		put_char(ctx, c);
+		c = get_char(ctx);
+	}
+}
+
+static bool tokenise_metadata_element_internal(tokenise_context* ctx, document_element_type type, const char* key, size_t key_len)
+{
+	if (strncmp(&ctx->read_ptr[-1], key, key_len) == 0)
+	{
+		advance_read_ptr(ctx, key_len);
+		tokenise_eat_metadata_spaces(ctx);
+		line_token* token = add_line_token(ctx, type);
+		tokenise_copy_metadata_value(ctx, token);
 
 		return true;
 	}
 
 	return false;
+}
+
+#define tokenise_metadata_element(ctx, type, key) tokenise_metadata_element_internal(ctx, type, key, sizeof(key) - 1)
+
+static char tokenise_metadata(tokenise_context* ctx)
+{
+	char c = ctx->c;
+	if (c == ' ')
+		handle_tokenise_error(ctx, "Metadata tags \"[...]\" cannot begin with a space.");
+	else if (c == '\t')
+		handle_tokenise_error(ctx, "Metadata tags \"[...]\" cannot begin with a tab.");
+
+	if (tokenise_metadata_element(ctx, line_token_type_metadata_title, "Title:"))
+	{
+	}
+	else if (tokenise_metadata_element(ctx, line_token_type_metadata_author, "Author:"))
+	{
+	}
+	else if (tokenise_metadata_element(ctx, line_token_type_metadata_authors, "Authors:"))
+	{
+	}
+	else if (tokenise_metadata_element(ctx, line_token_type_metadata_translator, "Translator:"))
+	{
+	}
+	else if (tokenise_metadata_element(ctx, line_token_type_metadata_translators, "Translators:"))
+	{
+	}
+	else if (tokenise_metadata_element(ctx, line_token_type_metadata_written, "Written:"))
+	{
+	}
+	else if (tokenise_metadata_element(ctx, line_token_type_metadata_published, "Published:"))
+	{
+	}
+	else
+	{
+		handle_tokenise_error(ctx, "Unrecognised metadata key.");
+	}
+
+	// Make sure metadata is followed by a new line
+	c = get_filtered_char(ctx);
+	if (c != '\n')
+		handle_tokenise_error(ctx, "Metadata tags \"[...]\" must be followed by a new line.");
+
+	return get_filtered_char(ctx);
 }
 
 static char tokenise_bracket(tokenise_context* ctx, char c)
@@ -628,30 +688,13 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 		line_token* line = add_line_token(ctx, line_token_type_reference);
 		line->index = arabic_to_int(ctx->read_ptr - 1, ']');
 
-		set_read_ptr(ctx, current);
+		advance_read_ptr(ctx, current - ctx->read_ptr);
 
 		c = tokenise_text(ctx, get_filtered_char(ctx));
 	}
 	else
 	{
-		if (tokenise_metadata_title(ctx, &c))
-		{
-		}
-		else
-		{
-			// Just skip for now
-			do
-			{
-				c = get_filtered_char(ctx);
-			} while (c != ']');
-		}
-
-		// Make sure metadata is followed by a new line
-		c = get_filtered_char(ctx);
-		if (c != '\n')
-			handle_tokenise_error(ctx, "Metadata tags \"[...]\" must be followed by a new line.");
-
-		c = get_filtered_char(ctx);
+		c = tokenise_metadata(ctx);
 	}
 
 	return c;
