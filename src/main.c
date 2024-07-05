@@ -1,11 +1,6 @@
 static char* load_file(const char* filepath)
 {
-	FILE* f = fopen(filepath, "rb");
-	if (!f)
-	{
-		fprintf(stderr, "Error opening file '%s': %s.\n", filepath, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+	FILE* f = open_file(filepath, file_mode_read);
 
 	// Get file size
 	fseek(f, 0, SEEK_END);
@@ -68,6 +63,7 @@ int main(int argc, const char** argv)
 	finalise(&tokens, &mem_req, &doc);
 
 	generate_html(&doc);
+	generate_epub(&doc);
 
 	return EXIT_SUCCESS;
 }

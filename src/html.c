@@ -134,14 +134,7 @@ static void print_text_block(html_context* ctx, const char* text)
 
 static void generate_html(const document* doc)
 {
-	const char* filepath = "out.html";
-
-	FILE* f = fopen(filepath, "w");
-	if (!f)
-	{
-		fprintf(stderr, "Error opening file for write '%s': %s.\n", filepath, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
+	FILE* f = open_file("out.html", file_mode_write);
 
 	html_context ctx = {
 		.f		= f,
