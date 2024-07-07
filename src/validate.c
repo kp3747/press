@@ -53,6 +53,19 @@ static line_token* validate_paragraph(validate_context* ctx, line_token* token)
 	return token;
 }
 
+static line_token* validate_paragraph_break(validate_context* ctx, line_token* token)
+{
+	// Skip empty lines
+	token = validate_get_next_token(ctx);
+	while (token->type == line_token_type_newline)
+		token = validate_get_next_token(ctx);
+
+	if (token->type != line_token_type_paragraph)
+		handle_validate_error(ctx, "[paragraph-break] must be followed by a paragraph.");
+
+	return token;
+}
+
 static line_token* validate_heading(validate_context* ctx, line_token* token)
 {
 	const int level = token->type - line_token_type_heading_1;
@@ -260,6 +273,9 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			break;
 		case line_token_type_paragraph:
 			token = validate_paragraph(&ctx, token);
+			break;
+		case line_token_type_paragraph_break:
+			token = validate_paragraph_break(&ctx, token);
 			break;
 		case line_token_type_heading_1:
 		case line_token_type_heading_2:

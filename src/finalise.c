@@ -95,6 +95,29 @@ static line_token* finalise_paragraph(finalise_context* ctx, line_token* token)
 	return token;
 }
 
+static line_token* finalise_paragraph_break(finalise_context* ctx, line_token* token)
+{
+	// Skip empty lines
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_newline)
+		token = finalise_get_next_token(ctx);
+
+	finalise_add_element(ctx, document_element_type_paragraph_break_begin, nullptr);
+	finalise_add_element(ctx, document_element_type_text_block, token->text);
+
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_paragraph)
+	{
+		finalise_add_element(ctx, document_element_type_line_break, nullptr);
+		finalise_add_element(ctx, document_element_type_text_block, token->text);
+		token = finalise_get_next_token(ctx);
+	}
+
+	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+
+	return token;
+}
+
 static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
 {
 	finalise_add_element(ctx, document_element_type_blockquote_begin, nullptr);
@@ -293,6 +316,9 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			break;
 		case line_token_type_paragraph:
 			token = finalise_paragraph(&ctx, token);
+			break;
+		case line_token_type_paragraph_break:
+			token = finalise_paragraph_break(&ctx, token);
 			break;
 		case line_token_type_heading_1:
 			token = finalise_heading_1(&ctx, token);

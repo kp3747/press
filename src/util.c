@@ -10,7 +10,6 @@ static FILE* open_file(const char* path, file_mode mode)
 	if (!f)
 	{
 		fprintf(stderr, "Error opening file \"%s\": %s.\n", path, strerror(errno));
-
 		assert(false);
 		exit(EXIT_FAILURE);
 	}

@@ -1,15 +1,3 @@
-typedef struct
-{
-	FILE*			f;
-	const document*	doc;
-	int				depth;
-	int				ref_count;
-	int				chapter_index;
-	int				inline_ref_count;
-	int				chapter_ref_count;
-	int				inline_chapter_ref_count;
-} html_context;
-
 static void print_tabs(html_context* ctx, int depth)
 {
 	fputc('\n', ctx->f);
@@ -61,7 +49,7 @@ static void print_text_simple(html_context* ctx, const char* text)
 	}
 }
 
-static void print_text_block(html_context* ctx, const char* text)
+static void print_text_block(html_context* ctx, const char* text, bool print_references)
 {
 	while (*text)
 	{
@@ -113,15 +101,18 @@ static void print_text_block(html_context* ctx, const char* text)
 		}
 		else if (*text == text_token_type_reference)
 		{
-			const uint32_t ref_count = ctx->inline_ref_count++;
-			const uint32_t chapter_ref_count = ctx->inline_chapter_ref_count++;
+			if (print_references)
+			{
+				const uint32_t ref_count = ctx->inline_ref_count++;
+				const uint32_t chapter_ref_count = ctx->inline_chapter_ref_count++;
 
-			const document_chapter* chapter = &ctx->doc->chapters[ctx->chapter_index];
-			const document_reference* reference = &chapter->references[chapter_ref_count];
+				const document_chapter* chapter = &ctx->doc->chapters[ctx->chapter_index];
+				const document_reference* reference = &chapter->references[chapter_ref_count];
 
-			fprintf(ctx->f, "<sup><a href=\"#r%d\" title=\"", ref_count + 1);
-			print_text_simple(ctx, reference->text);
-			fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
+				fprintf(ctx->f, "<sup><a href=\"#r%d\" title=\"", ref_count + 1);
+				print_text_simple(ctx, reference->text);
+				fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
+			}
 		}
 		else
 		{
@@ -142,21 +133,27 @@ static void generate_html(const document* doc)
 		.depth	= 2
 	};
 
-	fprintf(f,
+	fputs(
 		"<!DOCTYPE html>\n"
 		"<html lang=\"en-GB\">\n"
 		"\t<head>\n"
 		"\t\t<meta charset=\"UTF-8\">\n"
 		"\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
-		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
-		"\t</head>\n"
-		"\t<body>"
+		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n",
+		f
 	);
 
 	if (doc->metadata.title)
-	{
+		fprintf(f, "\t\t<title>%s</title>\n", doc->metadata.title);
+
+	fputs(
+		"\t</head>\n"
+		"\t<body>",
+		f
+	);
+
+	if (doc->metadata.title)
 		fprintf(f, "\n\t\t<h1 class=\"title\">%s</h1>", doc->metadata.title);
-	}
 
 	if (doc->metadata.author_count)
 	{
@@ -202,8 +199,6 @@ static void generate_html(const document* doc)
 			"\t\t\t</ul>\n"
 			"\t\t</p>"
 		);
-
-		fprintf(f, "\n\t\t<hr>");
 	}
 
 	for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
@@ -223,7 +218,7 @@ static void generate_html(const document* doc)
 
 				print_tabs(&ctx, ctx.depth);
 				fprintf(f, "<h1 id=\"h%d\">", chapter_index + 1);
-				print_text_block(&ctx, element->text);
+				print_text_block(&ctx, element->text, true);
 				fprintf(f, "</h1>");
 				break;
 			case document_element_type_heading_2:
@@ -236,15 +231,18 @@ static void generate_html(const document* doc)
 				break;
 			case document_element_type_text_block:
 				print_tabs(&ctx, ctx.depth + 1);
-				print_text_block(&ctx, element->text);
+				print_text_block(&ctx, element->text, true);
 				break;
 			case document_element_type_line_break:
-				print_tabs(&ctx, ctx.depth + 1);
 				fputs("<br>", f);
 				break;
 			case document_element_type_paragraph_begin:
 				print_tabs(&ctx, ctx.depth);
 				fputs("<p>", f);
+				break;
+			case document_element_type_paragraph_break_begin:
+				print_tabs(&ctx, ctx.depth);
+				fputs("<p class=\"paragraph-break\">", f);
 				break;
 			case document_element_type_paragraph_end:
 				print_tabs(&ctx, ctx.depth);
@@ -281,25 +279,16 @@ static void generate_html(const document* doc)
 			}
 		}
 
-		if (chapter_index != doc->chapter_count - 1)
-			fprintf(f, "\n\t\t<hr>");
-
 		if (chapter->reference_count > 0)
 		{
-			if (chapter_index == doc->chapter_count - 1)
-				fprintf(f, "\n\t\t<hr>");
-
 			for (uint32_t reference_index = 0; reference_index < chapter->reference_count; ++reference_index)
 			{
 				document_reference* reference = &chapter->references[reference_index];
-				fprintf(f, "\n\t\t<p id=\"r%d\">\n", ++ctx.ref_count);
+				fprintf(f, "\n\t\t<p class=\"footnote\" id=\"r%d\">\n", ++ctx.ref_count);
 				fprintf(f, "\t\t\t[%d] ", ++ctx.chapter_ref_count);
-				print_text_block(&ctx, reference->text);
+				print_text_block(&ctx, reference->text, true);
 				fprintf(f, "\n\t\t</p>");
 			}
-
-			if (chapter_index != doc->chapter_count - 1)
-				fprintf(f, "\n\t\t<hr>");
 		}
 	}
 

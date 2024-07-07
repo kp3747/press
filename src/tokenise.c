@@ -749,6 +749,9 @@ static char tokenise_metadata(tokenise_context* ctx, char c)
 	else if (tokenise_metadata_element(line_token_type_metadata_published, "Published:"))
 	{
 	}
+	else if (tokenise_metadata_element(line_token_type_paragraph_break, "paragraph-break"))
+	{
+	}
 	else
 	{
 		handle_tokenise_error(ctx, "Unrecognised metadata key.");
