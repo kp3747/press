@@ -397,7 +397,7 @@ static bool check_dash(tokenise_context* ctx, char c)
 		}
 		else
 		{
-			peek_apply(ctx, &peek);
+			get_char(ctx);
 			put_text_token(ctx, text_token_type_en_dash);
 		}
 

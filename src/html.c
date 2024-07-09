@@ -49,7 +49,7 @@ static void print_text_simple(html_context* ctx, const char* text)
 	}
 }
 
-static void print_text_block(html_context* ctx, const char* text, bool print_references)
+static void print_text_block(html_context* ctx, const char* text)
 {
 	while (*text)
 	{
@@ -101,18 +101,15 @@ static void print_text_block(html_context* ctx, const char* text, bool print_ref
 		}
 		else if (*text == text_token_type_reference)
 		{
-			if (print_references)
-			{
-				const uint32_t ref_count = ctx->inline_ref_count++;
-				const uint32_t chapter_ref_count = ctx->inline_chapter_ref_count++;
+			const uint32_t ref_count = ctx->inline_ref_count++ + 1;
+			const uint32_t chapter_ref_count = ctx->inline_chapter_ref_count++;
 
-				const document_chapter* chapter = &ctx->doc->chapters[ctx->chapter_index];
-				const document_reference* reference = &chapter->references[chapter_ref_count];
+			const document_chapter* chapter = &ctx->doc->chapters[ctx->chapter_index];
+			const document_reference* reference = &chapter->references[chapter_ref_count];
 
-				fprintf(ctx->f, "<sup><a href=\"#r%d\" title=\"", ref_count + 1);
-				print_text_simple(ctx, reference->text);
-				fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
-			}
+			fprintf(ctx->f, "<sup><a id=\"ref-return%d\" href=\"#ref%d\" title=\"", ref_count, ref_count);
+			print_text_simple(ctx, reference->text);
+			fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
 		}
 		else
 		{
@@ -218,7 +215,7 @@ static void generate_html(const document* doc)
 
 				print_tabs(&ctx, ctx.depth);
 				fprintf(f, "<h1 id=\"h%d\">", chapter_index + 1);
-				print_text_block(&ctx, element->text, true);
+				print_text_block(&ctx, element->text);
 				fprintf(f, "</h1>");
 				break;
 			case document_element_type_heading_2:
@@ -231,7 +228,7 @@ static void generate_html(const document* doc)
 				break;
 			case document_element_type_text_block:
 				print_tabs(&ctx, ctx.depth + 1);
-				print_text_block(&ctx, element->text, true);
+				print_text_block(&ctx, element->text);
 				break;
 			case document_element_type_line_break:
 				fputs("<br>", f);
@@ -283,10 +280,13 @@ static void generate_html(const document* doc)
 		{
 			for (uint32_t reference_index = 0; reference_index < chapter->reference_count; ++reference_index)
 			{
+				++ctx.ref_count;
+				++ctx.chapter_ref_count;
+
 				document_reference* reference = &chapter->references[reference_index];
-				fprintf(f, "\n\t\t<p class=\"footnote\" id=\"r%d\">\n", ++ctx.ref_count);
-				fprintf(f, "\t\t\t[%d] ", ++ctx.chapter_ref_count);
-				print_text_block(&ctx, reference->text, true);
+				fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
+				fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
+				print_text_block(&ctx, reference->text);
 				fprintf(f, "\n\t\t</p>");
 			}
 		}

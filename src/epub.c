@@ -57,16 +57,29 @@ static void create_epub_opf(const document* doc)
 //	for (uint32_t i = 0; i < doc->metadata.translator_count; ++i)
 //		fprintf(f, "\t\t<dc:creator opf:role=\"translator\">%s</dc:creator>\n", doc->metadata.translators[i]);
 
+	fputs("\t\t<meta name=\"cover\" content=\"cover_image\"/>\n", f);
+
 	fputs("\t</metadata>\n", f);
 	fputs("\t<manifest>\n", f);
 	fputs("\t\t<item id=\"ncx\" href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\"/>\n", f);
 	fputs("\t\t<item id=\"css\" href=\"style.css\" media-type=\"text/css\"/>\n", f);
+
+	fprintf(f, "\t\t<item id=\"cover\" href=\"cover.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
+	fprintf(f, "\t\t<item id=\"cover_image\" href=\"cover.png\" media-type=\"image/png\"/>\n");
+
+	if (doc->chapter_count > 0)
+		fprintf(f, "\t\t<item id=\"toc\" href=\"toc.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)
 		fprintf(f, "\t\t<item id=\"chapter%d\" href=\"chapter%d.xhtml\" media-type=\"application/xhtml+xml\"/>\n", i + 1, i + 1);
 	fputs("\t</manifest>\n", f);
 
 	fputs("\t<spine toc=\"ncx\">\n", f);
+
+	fputs("\t\t<itemref idref=\"cover\"/>\n", f);
+
+	if (doc->chapter_count > 0)
+		fputs("\t\t<itemref idref=\"toc\"/>\n", f);
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)
 		fprintf(f, "\t\t<itemref idref=\"chapter%d\"/>\n", i + 1);
@@ -118,6 +131,51 @@ static void create_epub_ncx(const document* doc)
 	fclose(f);
 }
 
+static void create_epub_toc(const document* doc)
+{
+	if (doc->chapter_count == 0)
+		return;
+
+	FILE* f = open_file("ebook_out/toc.xhtml", file_mode_write);
+
+	html_context ctx = {
+		.f		= f,
+		.doc	= doc,
+		.depth	= 2
+	};
+
+	fprintf(f,
+		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
+		"\t<head>\n"
+		"\t\t<title>Table of Contents</title>\n"
+		//"\t\t<meta charset=\"UTF-8\">\n"
+		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
+		"\t</head>\n"
+		"\t<body>\n"
+		"\t\t<h1>Table of Contents</h1>\n"
+		"\t\t<p>\n"
+		"\t\t\t<ul>"
+	);
+
+	for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
+	{
+		document_element* heading = doc->chapters[chapter_index].elements;
+
+		fprintf(f, "\t\t\t\t<li><a href=\"chapter%d.xhtml\">", chapter_index + 1);
+		print_text_simple(&ctx, heading->text);
+		fprintf(f, "</a></li>\n");
+	}
+
+	fprintf(f,
+		"\n\t\t</ul>\n"
+		"\n\t</body>\n"
+		"</html>"
+	);
+
+	fclose(f);
+}
+
 static void create_epub_chapter(const document* doc, uint32_t index)
 {
 	// TODO: Check path sizes
@@ -159,8 +217,8 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			ctx.inline_chapter_ref_count = 0;
 
 			print_tabs(&ctx, ctx.depth);
-			fprintf(f, "<h1 id=\"h%d\">", index + 1);
-			print_text_block(&ctx, element->text, true);
+			fprintf(f, "<h1>");
+			print_text_block(&ctx, element->text);
 			fprintf(f, "</h1>");
 			break;
 		case document_element_type_heading_2:
@@ -173,15 +231,18 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			break;
 		case document_element_type_text_block:
 			print_tabs(&ctx, ctx.depth + 1);
-			print_text_block(&ctx, element->text, false);
+			print_text_block(&ctx, element->text);
 			break;
 		case document_element_type_line_break:
-			print_tabs(&ctx, ctx.depth + 1);
 			fputs("<br/>", f);
 			break;
 		case document_element_type_paragraph_begin:
 			print_tabs(&ctx, ctx.depth);
 			fputs("<p>", f);
+			break;
+		case document_element_type_paragraph_break_begin:
+			print_tabs(&ctx, ctx.depth);
+			fputs("<p class=\"paragraph-break\">", f);
 			break;
 		case document_element_type_paragraph_end:
 			print_tabs(&ctx, ctx.depth);
@@ -197,7 +258,7 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			break;
 		case document_element_type_ordered_list_begin_roman:
 			print_tabs(&ctx, ctx.depth++);
-			fputs("<ol>", f); // TODO: Style
+			fputs("<ol type=\"I\">", f);
 			break;
 		case document_element_type_ordered_list_begin_arabic:
 			print_tabs(&ctx, ctx.depth++);
@@ -205,7 +266,7 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			break;
 		case document_element_type_ordered_list_begin_letter:
 			print_tabs(&ctx, ctx.depth++);
-			fputs("<ol>", f); // TODO: Style
+			fputs("<ol type=\"a\">", f);
 			break;
 		case document_element_type_ordered_list_end:
 			print_tabs(&ctx, --ctx.depth);
@@ -215,6 +276,21 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			print_tabs(&ctx, ctx.depth);
 			fprintf(f, "<li>%s</li>", element->text);
 			break;
+		}
+	}
+
+	if (chapter->reference_count > 0)
+	{
+		for (uint32_t reference_index = 0; reference_index < chapter->reference_count; ++reference_index)
+		{
+			++ctx.ref_count;
+			++ctx.chapter_ref_count;
+
+			document_reference* reference = &chapter->references[reference_index];
+			fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
+			fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
+			print_text_block(&ctx, reference->text);
+			fprintf(f, "\n\t\t</p>");
 		}
 	}
 
@@ -230,9 +306,10 @@ static void generate_epub(const document* doc)
 {
 	create_epub_mimetype();
 	create_epub_meta_inf();
-	create_epub_css();
+	//create_epub_css();
 	create_epub_opf(doc);
 	create_epub_ncx(doc);
+	create_epub_toc(doc);
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)
 		create_epub_chapter(doc, i);
