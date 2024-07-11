@@ -41,6 +41,7 @@ static void print_usage(void)
 		"Flags:\n"
 		"  none    validates source file and produces no output\n"
 		"  --html  generates HTML output\n\n"
+		"  --epub  generates ePub2 output\n\n"
 	);
 
 	exit(EXIT_FAILURE);
@@ -81,6 +82,28 @@ static const char* copy_filename(const char* filepath)
 	return filename;
 }
 
+static void delete_dir(const char* dir)
+{
+	char buffer[256];
+	const int len = snprintf(buffer, sizeof(buffer), "rmdir %s /s /q", dir);
+	assert(len < sizeof(buffer));
+
+	const int ret = system(buffer);
+	if (ret)
+		handle_error("Unable to delete directory \"%s\"", dir);
+}
+
+static void create_dir(const char* dir)
+{
+	char buffer[256];
+	const int len = snprintf(buffer, sizeof(buffer), "mkdir %s", dir);
+	assert(len < sizeof(buffer));
+
+	const int ret = system(buffer);
+	if (ret)
+		handle_error("Unable to create directory \"%s\"", dir);
+}
+
 int main(int argc, const char** argv)
 {
 	if (argc <= 1)
@@ -101,6 +124,9 @@ int main(int argc, const char** argv)
 
 	if (!doc.metadata.title)
 		doc.metadata.title = copy_filename(filepath);
+
+	delete_dir("press_output");
+	create_dir("press_output");
 
 	generate_html(&doc);
 	generate_epub(&doc);
