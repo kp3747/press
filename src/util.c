@@ -8,11 +8,22 @@ static FILE* open_file(const char* path, file_mode mode)
 
 	FILE* f = fopen(path, mode_string);
 	if (!f)
-	{
-		fprintf(stderr, "Error opening file \"%s\": %s.\n", path, strerror(errno));
-		assert(false);
-		exit(EXIT_FAILURE);
-	}
+		handle_error("Error opening file \"%s\": %s.\n", path, strerror(errno));
 
 	return f;
+}
+
+static void handle_error(const char* format, ...)
+{
+	fputs("Error: ", stderr);
+
+	va_list args;
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	fputc('\n', stderr);
+
+	assert(false);
+	exit(EXIT_FAILURE);
 }

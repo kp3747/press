@@ -120,9 +120,58 @@ static void print_text_block(html_context* ctx, const char* text)
 	}
 }
 
+static const char* generate_url_path(const char* filepath, const char* ext)
+{
+	assert(filepath);
+	assert(*filepath);
+	assert(ext);
+	assert(*ext);
+	assert(*ext != '.');
+
+	char buffer[256];
+	char* current = buffer;
+
+	for (;;)
+	{
+		const char c = *filepath++;
+
+		if (c >= 'a' && c <= 'z')
+			*current++ = c;
+		else if (c >= 'A' && c <= 'Z')
+			*current++ = c + 32;
+		else if (c == '.')
+			*current++ = '.';
+		else if (c == '-')
+			*current++ = '-';
+		else if (c == ' ')
+			*current++ = '-';
+		else if (c == 0)
+			break;
+	}
+
+	// Add extension
+	*current++ = '.';
+	while (*ext)
+		*current++ = *ext++;
+
+	// Null terminate
+	*current++ = 0;
+
+	// TODO: Add metadata option to override filename
+	if (current == buffer)
+		handle_error("Unable to generate web-safe filename from title.");
+
+	const int64_t size = current - buffer;
+	char* url_path = malloc(size);
+	memcpy(url_path, buffer, size);
+
+	return url_path;
+}
+
 static void generate_html(const document* doc)
 {
-	FILE* f = open_file("out.html", file_mode_write);
+	const char* filepath = generate_url_path(doc->metadata.title, "html");
+	FILE* f = open_file(filepath, file_mode_write);
 
 	html_context ctx = {
 		.f		= f,
