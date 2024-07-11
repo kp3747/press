@@ -28,8 +28,101 @@ static void create_epub_css(void)
 {
 	FILE* f = open_file(OUTPUT_DIR "/epub/style.css", file_mode_write);
 
+	// Chapter headings are centred
 	fputs(
-		"",
+		"h1 {\n\t"
+			"text-align: center;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs which don't follow a heading are not indented
+	fputs(
+		"p {\n\t"
+			"margin-top: 0;\n\t"
+			"text-indent: 1.5em;\n\t"
+			"hyphens: auto;\n\t"
+			"margin-bottom: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraph with previous gap
+	fputs(
+		".paragraph-break {\n\t"
+			"margin-top: 1em;\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Footnote
+	fputs(
+		".footnote {\n\t"
+			"margin-top: 1em;\n\t"
+			"text-indent: 0;\n\t"
+			"font-size: 0.75em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs after headings are not indented
+	fputs(
+		"h1 + p,\n"
+		"h2 + p,\n"
+		"h3 + p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Blockquote indentation
+	fputs(
+		"blockquote {\n\t"
+			"margin-left: 1.5em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// First paragraphs within a blockquote are not indented
+	fputs(
+		"blockquote p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs following first blockquote paragraph are indented
+	fputs(
+		"blockquote + p + p {\n\t"
+			"text-indent: 1.5em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs following blockquotes are not indented
+	fputs(
+		"blockquote + p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs following lists are not be indented
+	fputs(
+		"ol + p,\n"
+		"ul + p {\n\t"
+			"text-indent: 0;\n"
+		"}",
 		f
 	);
 
@@ -57,15 +150,15 @@ static void create_epub_opf(const document* doc)
 //	for (uint32_t i = 0; i < doc->metadata.translator_count; ++i)
 //		fprintf(f, "\t\t<dc:creator opf:role=\"translator\">%s</dc:creator>\n", doc->metadata.translators[i]);
 
-	fputs("\t\t<meta name=\"cover\" content=\"cover_image\"/>\n", f);
+	//fputs("\t\t<meta name=\"cover\" content=\"cover_image\"/>\n", f);
 
 	fputs("\t</metadata>\n", f);
 	fputs("\t<manifest>\n", f);
 	fputs("\t\t<item id=\"ncx\" href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\"/>\n", f);
 	fputs("\t\t<item id=\"css\" href=\"style.css\" media-type=\"text/css\"/>\n", f);
 
-	fprintf(f, "\t\t<item id=\"cover\" href=\"cover.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
-	fprintf(f, "\t\t<item id=\"cover_image\" href=\"cover.png\" media-type=\"image/png\"/>\n");
+//	fprintf(f, "\t\t<item id=\"cover\" href=\"cover.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
+//	fprintf(f, "\t\t<item id=\"cover_image\" href=\"cover.png\" media-type=\"image/png\"/>\n");
 
 	if (doc->chapter_count > 0)
 		fprintf(f, "\t\t<item id=\"toc\" href=\"toc.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
@@ -76,7 +169,7 @@ static void create_epub_opf(const document* doc)
 
 	fputs("\t<spine toc=\"ncx\">\n", f);
 
-	fputs("\t\t<itemref idref=\"cover\"/>\n", f);
+	//fputs("\t\t<itemref idref=\"cover\"/>\n", f);
 
 	if (doc->chapter_count > 0)
 		fputs("\t\t<itemref idref=\"toc\"/>\n", f);
@@ -305,7 +398,7 @@ static void generate_epub(const document* doc)
 
 	create_epub_mimetype();
 	create_epub_meta_inf();
-	//create_epub_css();
+	create_epub_css();
 	create_epub_opf(doc);
 	create_epub_ncx(doc);
 	create_epub_toc(doc);
