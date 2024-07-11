@@ -46,12 +46,49 @@ static void print_usage(void)
 	exit(EXIT_FAILURE);
 }
 
+static const char* copy_filename(const char* filepath)
+{
+	assert(filepath);
+	assert(*filepath);
+
+	const char* last_dir = filepath;
+	const char* last_dot = nullptr;
+
+	for (;;)
+	{
+		const char c = *filepath;
+		if (c == '\\' || c == '/')
+			last_dir = filepath + 1;
+		else if (c == '.')
+			last_dot = filepath;
+		else if (c == 0)
+			break;
+
+		++filepath;
+	}
+
+	if (!last_dot)
+		last_dot = filepath;
+
+	const int64_t len = last_dot - last_dir;
+	assert(len);
+
+	char* filename = malloc(len + 1);
+	for (int64_t i = 0; i < len; ++i)
+		filename[i] = last_dir[i];
+	filename[len] = 0;
+
+	return filename;
+}
+
 int main(int argc, const char** argv)
 {
 	if (argc <= 1)
 		print_usage();
 
-	char* text = load_file(argv[1]);
+	const char* filepath = argv[1];
+
+	char* text = load_file(filepath);
 
 	line_tokens tokens;
 	tokenise(text, &tokens);
@@ -61,6 +98,9 @@ int main(int argc, const char** argv)
 
 	document doc;
 	finalise(&tokens, &mem_req, &doc);
+
+	if (!doc.metadata.title)
+		doc.metadata.title = copy_filename(filepath);
 
 	generate_html(&doc);
 	generate_epub(&doc);
