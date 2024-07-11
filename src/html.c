@@ -131,6 +131,10 @@ static const char* generate_url_path(const char* filepath, const char* ext)
 	char buffer[256];
 	char* current = buffer;
 
+	memcpy(current, output_dir, output_len);
+	current += output_len;
+	*current++ = '/';
+
 	for (;;)
 	{
 		const char c = *filepath++;

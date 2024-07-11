@@ -88,20 +88,7 @@ static void delete_dir(const char* dir)
 	const int len = snprintf(buffer, sizeof(buffer), "rmdir %s /s /q", dir);
 	assert(len < sizeof(buffer));
 
-	const int ret = system(buffer);
-	if (ret)
-		handle_error("Unable to delete directory \"%s\"", dir);
-}
-
-static void create_dir(const char* dir)
-{
-	char buffer[256];
-	const int len = snprintf(buffer, sizeof(buffer), "mkdir %s", dir);
-	assert(len < sizeof(buffer));
-
-	const int ret = system(buffer);
-	if (ret)
-		handle_error("Unable to create directory \"%s\"", dir);
+	system(buffer);
 }
 
 int main(int argc, const char** argv)
@@ -125,8 +112,8 @@ int main(int argc, const char** argv)
 	if (!doc.metadata.title)
 		doc.metadata.title = copy_filename(filepath);
 
-	delete_dir("press_output");
-	create_dir("press_output");
+	delete_dir(output_dir);
+	create_dir(output_dir);
 
 	generate_html(&doc);
 	generate_epub(&doc);

@@ -26,3 +26,10 @@ enum
 };
 
 static_assert((page_size & (page_size - 1)) == 0); // Ensure power of two
+
+#define OUTPUT_DIR "press_output"
+static const char output_dir[] = OUTPUT_DIR;
+enum
+{
+	output_len = sizeof(output_dir) - 1
+};

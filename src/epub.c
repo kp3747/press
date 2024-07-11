@@ -1,6 +1,6 @@
 static void create_epub_mimetype(void)
 {
-	FILE* f = open_file("ebook_out/mimetype", file_mode_write);
+	FILE* f = open_file(OUTPUT_DIR "/epub/mimetype", file_mode_write);
 
 	fputs("application/epub+zip", f);
 
@@ -9,7 +9,7 @@ static void create_epub_mimetype(void)
 
 static void create_epub_meta_inf(void)
 {
-	FILE* f = open_file("ebook_out/META-INF/container.xml", file_mode_write);
+	FILE* f = open_file(OUTPUT_DIR "/epub/META-INF/container.xml", file_mode_write);
 
 	fputs(
 		"<?xml version=\"1.0\"?>\n"
@@ -26,7 +26,7 @@ static void create_epub_meta_inf(void)
 
 static void create_epub_css(void)
 {
-	FILE* f = open_file("ebook_out/style.css", file_mode_write);
+	FILE* f = open_file(OUTPUT_DIR "/epub/style.css", file_mode_write);
 
 	fputs(
 		"",
@@ -38,7 +38,7 @@ static void create_epub_css(void)
 
 static void create_epub_opf(const document* doc)
 {
-	FILE* f = open_file("ebook_out/content.opf", file_mode_write);
+	FILE* f = open_file(OUTPUT_DIR "/epub/content.opf", file_mode_write);
 
 	fputs(
 		"<?xml version=\"1.0\"?>\n"
@@ -93,7 +93,7 @@ static void create_epub_opf(const document* doc)
 
 static void create_epub_ncx(const document* doc)
 {
-	FILE* f = open_file("ebook_out/toc.ncx", file_mode_write);
+	FILE* f = open_file(OUTPUT_DIR "/epub/toc.ncx", file_mode_write);
 
 	fputs(
 		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -136,7 +136,7 @@ static void create_epub_toc(const document* doc)
 	if (doc->chapter_count == 0)
 		return;
 
-	FILE* f = open_file("ebook_out/toc.xhtml", file_mode_write);
+	FILE* f = open_file(OUTPUT_DIR "/epub/toc.xhtml", file_mode_write);
 
 	html_context ctx = {
 		.f		= f,
@@ -178,12 +178,8 @@ static void create_epub_toc(const document* doc)
 
 static void create_epub_chapter(const document* doc, uint32_t index)
 {
-	// TODO: Check path sizes
-	char path[256];
-	const int len = snprintf(path, sizeof(path), "ebook_out/chapter%d.xhtml", index + 1);
-	assert(len < sizeof(path));
-
-	FILE* f = open_file(path, file_mode_write);
+	const char* filepath = generate_path(OUTPUT_DIR "/epub/chapter%d.xhtml", index + 1);
+	FILE* f = open_file(filepath, file_mode_write);
 
 	html_context ctx = {
 		.f				= f,
@@ -304,6 +300,9 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 
 static void generate_epub(const document* doc)
 {
+	delete_dir(OUTPUT_DIR "\\epub");
+	create_dir(OUTPUT_DIR "\\epub\\META-INF");
+
 	create_epub_mimetype();
 	create_epub_meta_inf();
 	//create_epub_css();
