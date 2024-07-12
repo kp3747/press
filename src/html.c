@@ -172,8 +172,241 @@ static const char* generate_url_path(const char* filepath, const char* ext)
 	return url_path;
 }
 
+static void create_html_css(void)
+{
+	FILE* f = open_file(OUTPUT_DIR "/style.css", file_mode_write);
+
+	// This adds support for light and dark modes based on browser settings
+	fputs(
+		":root {\n\t"
+			"color-scheme: light dark;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Default universal settings
+	fputs(
+		"body {\n\t"
+			// Set font and base size
+			"font-family: \"Georgia\", serif;\n\t"
+			"font-size: 18px;\n\t"
+			// Set theme colours
+			"color: light-dark(#000000, #E0E0E0);\n\t"
+			"background-color: light-dark(#FFFFFF, #1E1E1E);\n\t"
+			// Centre text at a comfortable column width for reading
+			"max-width: 55ch;\n\t"
+			"margin-left: auto;\n\t"
+			"margin-right: auto;\n\t"
+			// Add padding so we don't go up against the edges of small displays
+			"padding-left: 1em;\n\t"
+			"padding-right: 1em;\n\t"
+			"padding-bottom: 1em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Chapter headings are centred
+	fputs(
+		"h1 {\n\t"
+			"text-align: center;\n\t"
+			"page-break-before: always;\n" // Ensures chapters start on a new page when printed
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Title heading
+	fputs(
+		"h1.title {\n\t"
+			"font-size: 48px;\n\t"
+			"padding-top: 128px;\n\t"
+			"padding-bottom: 128px;\n\t"
+			"page-break-before: avoid;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Superscript
+	fputs(
+		"sup {\n\t"
+			"line-height: 0;\n\t"	// Prevent references from increasing line height
+			"font-size: 0.75em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Remove underlines from hyperlinks
+	fputs(
+		"a {\n\t"
+			"text-decoration: none;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Add underline when hovering over link
+	fputs(
+		"a:hover {\n\t"
+			"text-decoration: underline;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Links should not stand out when printing
+	fputs(
+		"@media print {\n\t"
+			"a {\n\t\t"
+				"color: black;\n\t"
+			"}\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Avoid new lines after a heading when printing
+	fputs(
+		"h1, h2, h3 {\n\t"
+			"page-break-after: avoid;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs which don't follow a heading are not indented
+	fputs(
+		"p {\n\t"
+			"margin-top: 0;\n\t"
+			"text-indent: 1.5em;\n\t"
+			"text-align: justify;\n\t"
+			"hyphens: auto;\n\t"
+			"margin-bottom: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraph with previous gap
+	fputs(
+		"p.paragraph-break {\n\t"
+			"margin-top: 1em;\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Authors
+	fputs(
+		"p.authors {\n\t"
+			"text-align: center;\n\t"
+			"padding-top: 0;\n\t"
+			"padding-bottom: 128px;\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Footnote
+	fputs(
+		"p.footnote {\n\t"
+			"margin-top: 1em;\n\t"
+			"text-indent: 0;\n\t"
+			"font-size: 0.75em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs after headings are not indented
+	fputs(
+		"h1 + p,\n"
+		"h2 + p,\n"
+		"h3 + p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Blockquote indentation
+	fputs(
+		"blockquote {\n\t"
+			"margin-left: 1.5em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// First paragraphs within a blockquote are not indented
+	fputs(
+		"blockquote p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs following first blockquote paragraph are indented
+	fputs(
+		"blockquote p + p {\n\t"
+			"text-indent: 1.5em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs following blockquotes are not indented
+	fputs(
+		"blockquote + p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Lists
+	fputs(
+		"ol, ul {\n\t"
+			"text-align: justify;\n\t"
+			"hyphens: auto;\n\t"
+			"margin-left: 1.5em;\n\t"
+			"padding-left: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs following lists are not be indented
+	fputs(
+		"ol + p,\n"
+		"ul + p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Chapter list should be left-aligned
+	fputs(
+		"ul.chapters {\n\t"
+			"text-align: left;\n"
+		"}",
+		f
+	);
+
+	fclose(f);
+}
+
 static void generate_html(const document* doc)
 {
+	create_html_css();
+
 	const char* filepath = generate_url_path(doc->metadata.title, "html");
 	FILE* f = open_file(filepath, file_mode_write);
 
@@ -233,7 +466,7 @@ static void generate_html(const document* doc)
 		fprintf(f,
 			"\n\t\t<h1>Table of Contents</h1>\n"
 			"\t\t<p>\n"
-			"\t\t\t<ul>\n"
+			"\t\t\t<ul class=\"chapters\">\n"
 		);
 
 		for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)

@@ -101,7 +101,7 @@ static void create_epub_css(void)
 
 	// Paragraphs following first blockquote paragraph are indented
 	fputs(
-		"blockquote + p + p {\n\t"
+		"blockquote p + p {\n\t"
 			"text-indent: 1.5em;\n"
 		"}",
 		f
@@ -122,6 +122,15 @@ static void create_epub_css(void)
 		"ol + p,\n"
 		"ul + p {\n\t"
 			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Chapter list should be left-aligned
+	fputs(
+		"ul.chapters {\n\t"
+			"text-align: left;\n"
 		"}",
 		f
 	);
@@ -248,7 +257,7 @@ static void create_epub_toc(const document* doc)
 		"\t<body>\n"
 		"\t\t<h1>Table of Contents</h1>\n"
 		"\t\t<p>\n"
-		"\t\t\t<ul>"
+		"\t\t\t<ul class=\"chapters\">"
 	);
 
 	for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
