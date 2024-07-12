@@ -36,7 +36,7 @@ static FILE* open_file(const char* path, file_mode mode)
 
 	FILE* f = fopen(path, mode_string);
 	if (!f)
-		handle_error("Error opening file \"%s\": %s.\n", path, strerror(errno));
+		handle_error("Unable to open file \"%s\": %s.\n", path, strerror(errno));
 
 	return f;
 }

@@ -156,9 +156,11 @@ static void create_epub_opf(const document* doc)
 	for (uint32_t i = 0; i < doc->metadata.author_count; ++i)
 		fprintf(f, "\t\t<dc:creator>%s</dc:creator>\n", doc->metadata.authors[i]);
 
+	// TODO: Figure out how to add translator metadata
 //	for (uint32_t i = 0; i < doc->metadata.translator_count; ++i)
 //		fprintf(f, "\t\t<dc:creator opf:role=\"translator\">%s</dc:creator>\n", doc->metadata.translators[i]);
 
+	// TODO: Add metadata to specify cover image
 	//fputs("\t\t<meta name=\"cover\" content=\"cover_image\"/>\n", f);
 
 	fputs("\t</metadata>\n", f);
@@ -202,9 +204,6 @@ static void create_epub_ncx(const document* doc)
 		"<ncx xmlns=\"http://www.daisy.org/z3986/2005/ncx/\" version=\"2005-1\">\n"
 		"\t<head>\n"
 		"\t\t<meta name=\"dtb:uid\" content=\"6519aff0-f47c-437c-ba20-cc0782b39b05\"/>\n"
-//		"\t\t<meta name=\"dtb:depth\" content=\"1\"/>\n"
-//		"\t\t<meta name=\"dtb:totalPageCount\" content=\"0\"/>\n"
-//		"\t\t<meta name=\"dtb:maxPageNumber\" content=\"0\"/>\n"
 		"\t</head>\n",
 		f
 	);
@@ -251,7 +250,6 @@ static void create_epub_toc(const document* doc)
 		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
 		"\t<head>\n"
 		"\t\t<title>Table of Contents</title>\n"
-		//"\t\t<meta charset=\"UTF-8\">\n"
 		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
 		"\t</head>\n"
 		"\t<body>\n"
@@ -297,7 +295,6 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
 		"\t<head>\n"
 		"\t\t<title>%s</title>\n"
-		//"\t\t<meta charset=\"UTF-8\">\n"
 		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
 		"\t</head>\n"
 		"\t<body>",

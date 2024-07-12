@@ -36,7 +36,7 @@ static void print_usage(void)
 {
 	fprintf(stderr,
 		"Usage:\n"
-		"  press <src.txt> [--html]\n"
+		"  press <src.txt> [--html|--epub]\n"
 		"\n"
 		"Flags:\n"
 		"  none    validates source file and produces no output\n"
@@ -93,10 +93,35 @@ static void delete_dir(const char* dir)
 
 int main(int argc, const char** argv)
 {
+	bool html = false;
+	bool epub = false;
+	const char* filepath = nullptr;
+
 	if (argc <= 1)
 		print_usage();
 
-	const char* filepath = argv[1];
+	for (int i = 1; i < argc; ++i)
+	{
+		if (*argv[i] == '-')
+		{
+			if (strcmp(argv[i], "--html") == 0)
+				html = true;
+			else if (strcmp(argv[i], "--epub") == 0)
+				epub = true;
+			else
+				handle_error("Unsupported argument \"%s\".", argv[i]);
+		}
+		else
+		{
+			if (filepath)
+				handle_error("Only a single source file is currently supported.");
+
+			filepath = argv[i];
+		}
+	}
+
+	if (!filepath)
+		handle_error("No source file specified.");
 
 	char* text = load_file(filepath);
 
@@ -112,11 +137,23 @@ int main(int argc, const char** argv)
 	if (!doc.metadata.title)
 		doc.metadata.title = copy_filename(filepath);
 
-	delete_dir(output_dir);
-	create_dir(output_dir);
+	if (html || epub)
+	{
+		delete_dir(output_dir);
+		create_dir(output_dir);
 
-	generate_html(&doc);
-	generate_epub(&doc);
+		if (html)
+			generate_html(&doc);
+
+		if (epub)
+			generate_epub(&doc);
+
+		printf("Generation successful\n");
+	}
+	else
+	{
+		printf("Validation successful\n");
+	}
 
 	return EXIT_SUCCESS;
 }
