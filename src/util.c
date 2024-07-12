@@ -1,7 +1,7 @@
 static void create_dir(const char* dir)
 {
 	char buffer[256];
-	const int len = snprintf(buffer, sizeof(buffer), "mkdir %s", dir);
+	const int len = snprintf(buffer, sizeof(buffer), "mkdir %s >nul 2>nul", dir);
 	assert(len < sizeof(buffer));
 
 	const int ret = system(buffer);

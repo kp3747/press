@@ -85,7 +85,7 @@ static const char* copy_filename(const char* filepath)
 static void delete_dir(const char* dir)
 {
 	char buffer[256];
-	const int len = snprintf(buffer, sizeof(buffer), "rmdir %s /s /q", dir);
+	const int len = snprintf(buffer, sizeof(buffer), "rmdir %s /s /q >nul 2>nul", dir);
 	assert(len < sizeof(buffer));
 
 	system(buffer);
