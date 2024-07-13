@@ -12,18 +12,11 @@ typedef struct
 typedef struct
 {
 	char*		buffer;
-//	const char*	read_ptr;
 	char*		write_ptr;
 	line_token*	current_line;
 	line_token*	lines;
 	uint32_t	line_count;
 	uint32_t	line_capacity;
-//	uint32_t	line;
-//	uint32_t	column;
-//	uint32_t	next_line;
-//	uint32_t	next_column;
-//	char		c;
-//	char		pc;
 	uint32_t	ref_count;
 	peek_state	peek;
 } tokenise_context;

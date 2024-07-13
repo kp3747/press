@@ -5,8 +5,6 @@ typedef enum
 } file_mode;
 
 static void			create_dir(const char* dir);
-//static void			push_dir(const char* dir);
-//static void			pop_dir(void);
 static FILE*		open_file(const char* path, file_mode mode);
 static void			handle_error(const char* format, ...);
 static const char*	generate_path(const char* format, ...);
