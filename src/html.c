@@ -211,7 +211,7 @@ static void create_html_css(void)
 	fputs(
 		"h1 {\n\t"
 			"text-align: center;\n\t"
-			"page-break-before: always;\n" // Ensures chapters start on a new page when printed
+			//"page-break-before: always;\n" // Ensures chapters start on a new page when printed
 		"}",
 		f
 	);
