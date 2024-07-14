@@ -418,7 +418,17 @@ static char tokenise_text(tokenise_context* ctx, char c)
 
 	for (;;)
 	{
-		if (c == '"')
+		if (c == '\\')
+		{
+			c = get_char(ctx);
+			if (c == '[')
+				put_text_token(ctx, text_token_type_left_square_bracket);
+			else if (c == ']')
+				put_text_token(ctx, text_token_type_right_square_bracket);
+			else
+				handle_tokenise_error(ctx, "Invalid character escape sequence.");
+		}
+		else if (c == '"')
 		{
 			if (quote_level == 0)
 			{

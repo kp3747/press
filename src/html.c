@@ -40,6 +40,14 @@ static void print_text_simple(html_context* ctx, const char* text)
 			fputc(0x80, ctx->f);
 			fputc(0x9D, ctx->f);
 		}
+		else if (*text == text_token_type_left_square_bracket)
+		{
+			fputc('[', ctx->f);
+		}
+		else if (*text == text_token_type_right_square_bracket)
+		{
+			fputc(']', ctx->f);
+		}
 		else if (*text >= ' ')
 		{
 			fputc(*text, ctx->f);
@@ -99,6 +107,14 @@ static void print_text_block(html_context* ctx, const char* text)
 			fputc(0x80, ctx->f);
 			fputc(0x9D, ctx->f);
 		}
+		else if (*text == text_token_type_left_square_bracket)
+		{
+			fputc('[', ctx->f);
+		}
+		else if (*text == text_token_type_right_square_bracket)
+		{
+			fputc(']', ctx->f);
+		}
 		else if (*text == text_token_type_reference)
 		{
 			const uint32_t ref_count = ctx->inline_ref_count++ + 1;
@@ -111,7 +127,7 @@ static void print_text_block(html_context* ctx, const char* text)
 			print_text_simple(ctx, reference->text);
 			fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
 		}
-		else
+		else if (*text >= ' ')
 		{
 			fputc(*text, ctx->f);
 		}
