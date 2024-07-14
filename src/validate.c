@@ -48,6 +48,20 @@ static line_token* validate_paragraph(validate_context* ctx, line_token* token)
 	if (token->type != line_token_type_newline)
 		handle_validate_error(ctx, "Paragraphs must be followed by a blank line.");
 
+	token = validate_get_next_token(ctx);
+	if (token->type == line_token_type_newline)
+	{
+		line_token* break_token = token;
+
+		do
+		{
+			token = validate_get_next_token(ctx);
+		} while (token->type == line_token_type_newline);
+
+		if (token->type == line_token_type_paragraph)
+			break_token->type = line_token_type_paragraph_break;
+	}
+
 	return token;
 }
 
