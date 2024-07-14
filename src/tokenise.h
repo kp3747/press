@@ -3,13 +3,6 @@ typedef enum
 	line_token_type_none,
 	line_token_type_eof,
 	line_token_type_newline,
-	line_token_type_metadata_title,
-	line_token_type_metadata_author,
-	line_token_type_metadata_authors,
-	line_token_type_metadata_translator,
-	line_token_type_metadata_translators,
-	line_token_type_metadata_written,
-	line_token_type_metadata_published,
 	line_token_type_paragraph,
 	line_token_type_heading_1,
 	line_token_type_heading_2,
@@ -58,4 +51,4 @@ typedef struct
 	uint32_t	count;
 } line_tokens;
 
-static void tokenise(char* data, line_tokens* out_tokens);
+static void tokenise(char* data, line_tokens* out_tokens, document_metadata* metadata);

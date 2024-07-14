@@ -10,7 +10,10 @@
 #include "main.c"
 #include "html.c"
 #include "epub.c"
-#include "tokenise.c"
 #include "validate.c"
 #include "finalise.c"
 #include "util.c"
+
+#include "tokenise_internal.h"
+#include "tokenise_metadata.c"
+#include "tokenise.c"

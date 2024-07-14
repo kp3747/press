@@ -23,8 +23,8 @@
 		<DebugSln></DebugSln>
 		<UseVisualStudioEnvBat>false</UseVisualStudioEnvBat>
 		<Configurations>
-			<Configuration>Debug</Configuration>
-			<Configuration>Release</Configuration>
+			<Configuration>debug</Configuration>
+			<Configuration>release</Configuration>
 		</Configurations>
 		<Platforms>
 			<Platform>x64</Platform>

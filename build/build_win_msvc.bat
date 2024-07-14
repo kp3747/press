@@ -56,7 +56,7 @@ rem Create build output and object directories
 mkdir "build\win_%config%\obj" 2>nul
 
 set optimization=/O2 /GL /D NDEBUG
-if %config%==Debug set optimization=/Od
+if %config%==debug set optimization=/Od
 
 rem Invoke compiler
 %vc_compiler% ^

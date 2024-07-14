@@ -19,6 +19,13 @@ typedef enum
 	document_element_type_ordered_list_begin_letter
 } document_element_type;
 
+typedef enum
+{
+	document_type_none,
+	document_type_book,
+	document_type_article
+} document_type;
+
 typedef struct
 {
 	uint32_t day	: 5;
@@ -28,6 +35,7 @@ typedef struct
 
 typedef struct
 {
+	document_type	type;
 	const char*		title;
 	const char**	authors;
 	const char**	translators;

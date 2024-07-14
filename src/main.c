@@ -125,13 +125,14 @@ int main(int argc, const char** argv)
 
 	char* text = load_file(filepath);
 
+	document doc = {};
+
 	line_tokens tokens;
-	tokenise(text, &tokens);
+	tokenise(text, &tokens, &doc.metadata);
 
 	doc_mem_req mem_req;
 	validate(&tokens, &mem_req);
 
-	document doc;
 	finalise(&tokens, &mem_req, &doc);
 
 	if (!doc.metadata.title)

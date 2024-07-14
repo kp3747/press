@@ -1,26 +1,3 @@
-typedef struct
-{
-	const char*	read_ptr;
-	uint32_t	line;
-	uint32_t	column;
-	uint32_t	next_line;
-	uint32_t	next_column;
-	char		c;
-	char		pc;
-} peek_state;
-
-typedef struct
-{
-	char*		buffer;
-	char*		write_ptr;
-	line_token*	current_line;
-	line_token*	lines;
-	uint32_t	line_count;
-	uint32_t	line_capacity;
-	uint32_t	ref_count;
-	peek_state	peek;
-} tokenise_context;
-
 typedef enum
 {
 	emphasis_state_none,
@@ -28,7 +5,22 @@ typedef enum
 	emphasis_state_emphasis
 } emphasis_state;
 
-static void handle_tokenise_error(tokenise_context* ctx, const char* format, ...)
+static void handle_peek_error(const peek_state* peek, const char* format, ...)
+{
+	fprintf(stderr, "Parsing error (line %u, column %u): ", peek->line, peek->column);
+
+	va_list args;
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	fputc('\n', stderr);
+
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
+static void handle_tokenise_error(const tokenise_context* ctx, const char* format, ...)
 {
 	fprintf(stderr, "Parsing error (line %u, column %u): ", ctx->peek.line, ctx->peek.column);
 
@@ -636,128 +628,6 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	return c;
 }
 
-static void tokenise_eat_metadata_spaces(tokenise_context* ctx)
-{
-	for (;;)
-	{
-		char c = get_char(ctx);
-		if (c == ' ')
-		{
-		}
-		else if (c == '\t')
-		{
-		}
-		else if (c == '\n')
-		{
-			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
-		}
-		else
-		{
-			return;
-		}
-	}
-}
-
-static void tokenise_copy_metadata_value(tokenise_context* ctx, line_token* token)
-{
-	char c = ctx->peek.c;
-	for (;;)
-	{
-		if (c == '\n')
-		{
-			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
-		}
-		else if (c == '\t')
-		{
-			handle_tokenise_error(ctx, "Tabs are not permitted within metadata values.");
-		}
-		else if (c == ']')
-		{
-			if (ctx->peek.pc == ' ')
-				handle_tokenise_error(ctx, "Trailing spaces are not permitted.");
-
-			put_char(ctx, 0);
-			return;
-		}
-
-		put_char(ctx, c);
-		c = get_char(ctx);
-	}
-}
-
-static bool tokenise_metadata_element_internal(tokenise_context* ctx, char c, document_element_type type, const char* key, size_t key_len)
-{
-	peek_state peek;
-	char peeked_char;
-
-	if (c == key[0])
-	{
-		peek_init(ctx, &peek);
-
-		for (size_t i = 1; i < key_len; ++i)
-		{
-			peeked_char = peek_char(ctx, &peek);
-			if (peeked_char != key[i])
-				return false;
-		}
-
-		peek_apply(ctx, &peek);
-		tokenise_eat_metadata_spaces(ctx);
-		line_token* token = add_line_token(ctx, type);
-		tokenise_copy_metadata_value(ctx, token);
-
-		return true;
-	}
-
-	return false;
-}
-
-#define tokenise_metadata_element(type, key) tokenise_metadata_element_internal(ctx, c, type, key, sizeof(key) - 1)
-
-static char tokenise_metadata(tokenise_context* ctx, char c)
-{
-	if (c == ' ')
-		handle_tokenise_error(ctx, "Metadata tags \"[...]\" cannot begin with a space.");
-	else if (c == '\t')
-		handle_tokenise_error(ctx, "Metadata tags \"[...]\" cannot begin with a tab.");
-
-	if (tokenise_metadata_element(line_token_type_metadata_title, "Title:"))
-	{
-	}
-	else if (tokenise_metadata_element(line_token_type_metadata_author, "Author:"))
-	{
-	}
-	else if (tokenise_metadata_element(line_token_type_metadata_authors, "Authors:"))
-	{
-	}
-	else if (tokenise_metadata_element(line_token_type_metadata_translator, "Translator:"))
-	{
-	}
-	else if (tokenise_metadata_element(line_token_type_metadata_translators, "Translators:"))
-	{
-	}
-	else if (tokenise_metadata_element(line_token_type_metadata_written, "Written:"))
-	{
-	}
-	else if (tokenise_metadata_element(line_token_type_metadata_published, "Published:"))
-	{
-	}
-	else if (tokenise_metadata_element(line_token_type_paragraph_break, "paragraph-break"))
-	{
-	}
-	else
-	{
-		handle_tokenise_error(ctx, "Unrecognised metadata key.");
-	}
-
-	// Make sure metadata is followed by a new line
-	c = get_char(ctx);
-	if (c != '\n')
-		handle_tokenise_error(ctx, "Metadata tags \"[...]\" must be followed by a new line.");
-
-	return get_char(ctx);
-}
-
 static char tokenise_bracket(tokenise_context* ctx, char c)
 {
 	c = get_char(ctx);
@@ -791,7 +661,7 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 	return c;
 }
 
-static void tokenise(char* data, line_tokens* out_tokens)
+static void tokenise(char* data, line_tokens* out_tokens, document_metadata* metadata)
 {
 	tokenise_context ctx = {
 		.buffer				= data,
@@ -800,7 +670,8 @@ static void tokenise(char* data, line_tokens* out_tokens)
 			.read_ptr		= data,
 			.next_line		= 1,
 			.next_column	= 1
-		}
+		},
+		.metadata			= metadata
 	};
 
 	char c = get_char(&ctx);

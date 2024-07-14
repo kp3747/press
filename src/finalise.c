@@ -9,11 +9,9 @@ typedef struct
 	uint32_t			current_reference;
 	uint32_t			current_token;
 	uint32_t			token_count;
-	uint32_t			author_count;
 	uint32_t			chapter_count;
 	uint32_t			element_count;
 	uint32_t			reference_count;
-	uint32_t			translator_count;
 } finalise_context;
 
 static line_token* finalise_get_next_token(finalise_context* ctx)
@@ -35,15 +33,22 @@ static void finalise_add_element(finalise_context* ctx, document_element_type ty
 	element->text = text;
 }
 
-static void finalise_add_reference(finalise_context* ctx, const char* text)
+static line_token* finalise_paragraph(finalise_context* ctx, line_token* token)
 {
-	assert(ctx->current_reference < ctx->reference_count);
+	finalise_add_element(ctx, document_element_type_paragraph_begin, nullptr);
+	finalise_add_element(ctx, document_element_type_text_block, token->text);
 
-	const uint32_t index = ctx->current_chapter->reference_count++;
-	++ctx->current_reference;
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_paragraph)
+	{
+		finalise_add_element(ctx, document_element_type_line_break, nullptr);
+		finalise_add_element(ctx, document_element_type_text_block, token->text);
+		token = finalise_get_next_token(ctx);
+	}
 
-	document_reference* reference = &ctx->current_chapter->references[index];
-	reference->text = text;
+	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+
+	return token;
 }
 
 static line_token* finalise_heading_1(finalise_context* ctx, line_token* token)
@@ -77,45 +82,17 @@ static line_token* finalise_heading_3(finalise_context* ctx, line_token* token)
 	return finalise_get_next_token(ctx);
 }
 
-static line_token* finalise_paragraph(finalise_context* ctx, line_token* token)
+static line_token* finalise_reference(finalise_context* ctx, line_token* token)
 {
-	finalise_add_element(ctx, document_element_type_paragraph_begin, nullptr);
-	finalise_add_element(ctx, document_element_type_text_block, token->text);
+	assert(ctx->current_reference < ctx->reference_count);
 
-	token = finalise_get_next_token(ctx);
-	while (token->type == line_token_type_paragraph)
-	{
-		finalise_add_element(ctx, document_element_type_line_break, nullptr);
-		finalise_add_element(ctx, document_element_type_text_block, token->text);
-		token = finalise_get_next_token(ctx);
-	}
+	const uint32_t index = ctx->current_chapter->reference_count++;
+	++ctx->current_reference;
 
-	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+	document_reference* reference = &ctx->current_chapter->references[index];
+	reference->text = token->text;
 
-	return token;
-}
-
-static line_token* finalise_paragraph_break(finalise_context* ctx, line_token* token)
-{
-	// Skip empty lines
-	token = finalise_get_next_token(ctx);
-	while (token->type == line_token_type_newline)
-		token = finalise_get_next_token(ctx);
-
-	finalise_add_element(ctx, document_element_type_paragraph_break_begin, nullptr);
-	finalise_add_element(ctx, document_element_type_text_block, token->text);
-
-	token = finalise_get_next_token(ctx);
-	while (token->type == line_token_type_paragraph)
-	{
-		finalise_add_element(ctx, document_element_type_line_break, nullptr);
-		finalise_add_element(ctx, document_element_type_text_block, token->text);
-		token = finalise_get_next_token(ctx);
-	}
-
-	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
-
-	return token;
+	return finalise_get_next_token(ctx);
 }
 
 static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
@@ -154,6 +131,29 @@ static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
 	return token;
 }
 
+static line_token* finalise_paragraph_break(finalise_context* ctx, line_token* token)
+{
+	// Skip empty lines
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_newline)
+		token = finalise_get_next_token(ctx);
+
+	finalise_add_element(ctx, document_element_type_paragraph_break_begin, nullptr);
+	finalise_add_element(ctx, document_element_type_text_block, token->text);
+
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_paragraph)
+	{
+		finalise_add_element(ctx, document_element_type_line_break, nullptr);
+		finalise_add_element(ctx, document_element_type_text_block, token->text);
+		token = finalise_get_next_token(ctx);
+	}
+
+	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+
+	return token;
+}
+
 static line_token* finalise_ordered_list(finalise_context* ctx, line_token* token, line_token_type line_type, document_element_type doc_type)
 {
 	finalise_add_element(ctx, doc_type, nullptr);
@@ -171,100 +171,18 @@ static line_token* finalise_ordered_list(finalise_context* ctx, line_token* toke
 	return token;
 }
 
-static line_token* finalise_reference(finalise_context* ctx, line_token* token)
-{
-	finalise_add_reference(ctx, token->text);
-
-	return finalise_get_next_token(ctx);
-}
-
-static line_token* finalise_metadata_title(finalise_context* ctx, line_token* token)
-{
-	ctx->doc->metadata.title = token->text;
-
-	return finalise_get_next_token(ctx);
-}
-
-static line_token* finalise_metadata_string(finalise_context* ctx, line_token* token, const char*** list, uint32_t* count)
-{
-	assert(*count == 1);
-
-	(*list)[0] = token->text;
-
-	return finalise_get_next_token(ctx);
-}
-
-static line_token* finalise_metadata_string_list(finalise_context* ctx, line_token* token, const char*** list, uint32_t* count)
-{
-	// Add first author
-	(*list)[0] = token->text;
-
-	uint32_t index = 1;
-	char* current = token->text;
-
-	while (*current)
-	{
-		if (*current == ',')
-		{
-			// Null terminate and skip space
-			*current = 0;
-			current += 2;
-
-			(*list)[index++] = current;
-		}
-
-		++current;
-	}
-
-	assert(index == *count);
-
-	return finalise_get_next_token(ctx);
-}
-
-static line_token* finalise_metadata_author(finalise_context* ctx, line_token* token)
-{
-	return finalise_metadata_string(ctx, token, &ctx->doc->metadata.authors, &ctx->doc->metadata.author_count);
-}
-
-static line_token* finalise_metadata_authors(finalise_context* ctx, line_token* token)
-{
-	return finalise_metadata_string_list(ctx, token, &ctx->doc->metadata.authors, &ctx->doc->metadata.author_count);
-}
-
-static line_token* finalise_metadata_translator(finalise_context* ctx, line_token* token)
-{
-	return finalise_metadata_string(ctx, token, &ctx->doc->metadata.translators, &ctx->doc->metadata.translator_count);
-}
-
-static line_token* finalise_metadata_translators(finalise_context* ctx, line_token* token)
-{
-	return finalise_metadata_string_list(ctx, token, &ctx->doc->metadata.translators, &ctx->doc->metadata.translator_count);
-}
-
 static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* out_doc)
 {
-	const size_t author_size = sizeof(const char*) * mem_req->author_count;
-	const size_t translator_size = sizeof(const char*) * mem_req->translator_count;
 	const size_t chapter_size = sizeof(document_chapter) * mem_req->chapter_count;
 	const size_t element_size = sizeof(document_element) * mem_req->element_count;
 	const size_t reference_size = sizeof(document_reference) * mem_req->reference_count;
 
 	const size_t total_size =
-		author_size +
-		translator_size +
 		chapter_size +
 		element_size +
 		reference_size
 	;
 	uint8_t* mem = malloc(total_size);
-
-	memset(out_doc, 0x00, sizeof(document));
-
-	out_doc->metadata.authors = (const char**)mem;
-	mem += author_size;
-
-	out_doc->metadata.translators = (const char**)mem;
-	mem += translator_size;
 
 	out_doc->chapters = (document_chapter*)mem;
 	mem += chapter_size;
@@ -275,20 +193,15 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 	document_reference* references = (document_reference*)mem;
 	mem += reference_size;
 
-	out_doc->metadata.author_count = mem_req->author_count;
-	out_doc->metadata.translator_count = mem_req->translator_count;
-
 	finalise_context ctx = {
 		.doc				= out_doc,
 		.tokens				= tokens->lines,
 		.elements			= elements,
 		.references			= references,
 		.token_count		= tokens->count,
-		.author_count		= mem_req->author_count,
 		.chapter_count		= mem_req->chapter_count,
 		.element_count		= mem_req->element_count,
 		.reference_count	= mem_req->reference_count,
-		.translator_count	= mem_req->translator_count
 	};
 
 	line_token* token = finalise_get_next_token(&ctx);
@@ -299,26 +212,8 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 		case line_token_type_eof:
 			assert(ctx.current_element == ctx.element_count);
 			return;
-		case line_token_type_metadata_title:
-			token = finalise_metadata_title(&ctx, token);
-			break;
-		case line_token_type_metadata_author:
-			token = finalise_metadata_author(&ctx, token);
-			break;
-		case line_token_type_metadata_authors:
-			token = finalise_metadata_authors(&ctx, token);
-			break;
-		case line_token_type_metadata_translator:
-			token = finalise_metadata_translator(&ctx, token);
-			break;
-		case line_token_type_metadata_translators:
-			token = finalise_metadata_translators(&ctx, token);
-			break;
 		case line_token_type_paragraph:
 			token = finalise_paragraph(&ctx, token);
-			break;
-		case line_token_type_paragraph_break:
-			token = finalise_paragraph_break(&ctx, token);
 			break;
 		case line_token_type_heading_1:
 			token = finalise_heading_1(&ctx, token);
@@ -337,6 +232,9 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			break;
 		case line_token_type_block_paragraph:
 			token = finalise_blockquote(&ctx, token);
+			break;
+		case line_token_type_paragraph_break:
+			token = finalise_paragraph_break(&ctx, token);
 			break;
 		case line_token_type_ordered_list_roman:
 			token = finalise_ordered_list(&ctx, token, line_token_type_ordered_list_roman, document_element_type_ordered_list_begin_roman);
