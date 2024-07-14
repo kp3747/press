@@ -661,6 +661,26 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 	return c;
 }
 
+static char tokenise_comment(tokenise_context* ctx, char c)
+{
+	peek_state peek;
+	peek_init(ctx, &peek);
+
+	if (peek_char(ctx, &peek) == '/')
+	{
+		peek_apply(ctx, &peek);
+
+		for (;;)
+		{
+			c = get_char(ctx);
+			if (c == '\n')
+				return get_char(ctx);
+		}
+	}
+
+	return tokenise_paragraph(ctx, c, false);
+}
+
 static void tokenise(char* data, line_tokens* out_tokens, document_metadata* metadata)
 {
 	tokenise_context ctx = {
@@ -679,6 +699,8 @@ static void tokenise(char* data, line_tokens* out_tokens, document_metadata* met
 	{
 		if (c == 0)
 			break;
+		else if (c == '/')
+			c = tokenise_comment(&ctx, c);
 		else if (c == '[')
 			c = tokenise_bracket(&ctx, c);
 		else if (c == '\t')

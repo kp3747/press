@@ -248,13 +248,13 @@ static void parse_metadata_type(tokenise_context* ctx)
 		handle_tokenise_error(ctx, "Duplicate \"Type\" metadata attribute.");
 
 	static const char* type_strings[] = {
-		"Article",
-		"Book"
+		"Book",
+		"Article"
 	};
 	const int type_count = sizeof(type_strings) / sizeof(const char*);
 
 	const int value = parse_metadata_enum(ctx, "Type", type_strings, type_count);
-	ctx->metadata->type = value;
+	ctx->metadata->type = value + 1;
 }
 
 static void parse_metadata_title(tokenise_context* ctx)

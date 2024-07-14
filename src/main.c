@@ -130,6 +130,10 @@ int main(int argc, const char** argv)
 	line_tokens tokens;
 	tokenise(text, &tokens, &doc.metadata);
 
+	// Default to article to allow small documents without any metadata
+	if (doc.metadata.type == document_type_none)
+		doc.metadata.type = document_type_article;
+
 	doc_mem_req mem_req;
 	validate(&tokens, &mem_req);
 
