@@ -315,12 +315,12 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 {
 	if (c == '*')
 	{
-		c = get_char(ctx);
+		peek_state peek;
+		peek_init(ctx, &peek);
+
+		c = peek_char(ctx, &peek);
 		if (c == '*')
 		{
-			peek_state peek;
-			peek_init(ctx, &peek);
-
 			if (peek_char(ctx, &peek) == '*')
 				handle_tokenise_error(ctx, "Only two levels of '*' allowed.");
 
@@ -344,13 +344,11 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 			if (*state == emphasis_state_none)
 			{
 				put_text_token(ctx, text_token_type_emphasis_begin);
-				put_char(ctx, c);
 				*state = emphasis_state_emphasis;
 			}
 			else if (*state == emphasis_state_emphasis)
 			{
 				put_text_token(ctx, text_token_type_emphasis_end);
-				put_char(ctx, c);
 				*state = emphasis_state_none;
 			}
 			else

@@ -435,53 +435,56 @@ static void generate_html(const document* doc)
 		f
 	);
 
-	if (doc->metadata.title)
-		fprintf(f, "\n\t\t<h1 class=\"title\">%s</h1>", doc->metadata.title);
-
-	if (doc->metadata.author_count)
+	if (doc->metadata.type == document_type_book)
 	{
-		fprintf(f, "\n\t\t<p class=\"authors\">");
+		if (doc->metadata.title)
+			fprintf(f, "\n\t\t<h1 class=\"title\">%s</h1>", doc->metadata.title);
 
-		for (uint32_t i = 0; i < doc->metadata.author_count - 1; ++i)
-			fprintf(f, "\n\t\t\t%s<br>", doc->metadata.authors[i]);
-		fprintf(f, "\n\t\t\t%s", doc->metadata.authors[doc->metadata.author_count - 1]);
-
-		fprintf(f, "\n\t\t</p>");
-	}
-
-	if (doc->metadata.translator_count)
-	{
-		fprintf(f, "\n\t\t<p class=\"authors\">");
-		fprintf(f, "\n\t\t\tTranslated by:<br>");
-
-		for (uint32_t i = 0; i < doc->metadata.translator_count - 1; ++i)
-			fprintf(f, "\n\t\t\t%s<br>", doc->metadata.translators[i]);
-		fprintf(f, "\n\t\t\t%s", doc->metadata.translators[doc->metadata.translator_count - 1]);
-
-		fprintf(f, "\n\t\t</p>");
-	}
-
-	if (doc->chapter_count > 1)
-	{
-		fprintf(f,
-			"\n\t\t<h1>Table of Contents</h1>\n"
-			"\t\t<p>\n"
-			"\t\t\t<ul class=\"chapters\">\n"
-		);
-
-		for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
+		if (doc->metadata.author_count)
 		{
-			document_element* heading = doc->chapters[chapter_index].elements;
+			fprintf(f, "\n\t\t<p class=\"authors\">");
 
-			fprintf(f, "\t\t\t\t<li><a href=\"#h%d\">", chapter_index + 1);
-			print_text_simple(&ctx, heading->text);
-			fprintf(f, "</a></li>\n");
+			for (uint32_t i = 0; i < doc->metadata.author_count - 1; ++i)
+				fprintf(f, "\n\t\t\t%s<br>", doc->metadata.authors[i]);
+			fprintf(f, "\n\t\t\t%s", doc->metadata.authors[doc->metadata.author_count - 1]);
+
+			fprintf(f, "\n\t\t</p>");
 		}
 
-		fprintf(f,
-			"\t\t\t</ul>\n"
-			"\t\t</p>"
-		);
+		if (doc->metadata.translator_count)
+		{
+			fprintf(f, "\n\t\t<p class=\"authors\">");
+			fprintf(f, "\n\t\t\tTranslated by:<br>");
+
+			for (uint32_t i = 0; i < doc->metadata.translator_count - 1; ++i)
+				fprintf(f, "\n\t\t\t%s<br>", doc->metadata.translators[i]);
+			fprintf(f, "\n\t\t\t%s", doc->metadata.translators[doc->metadata.translator_count - 1]);
+
+			fprintf(f, "\n\t\t</p>");
+		}
+
+		if (doc->chapter_count > 1)
+		{
+			fprintf(f,
+				"\n\t\t<h1>Table of Contents</h1>\n"
+				"\t\t<p>\n"
+				"\t\t\t<ul class=\"chapters\">\n"
+			);
+
+			for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
+			{
+				document_element* heading = doc->chapters[chapter_index].elements;
+
+				fprintf(f, "\t\t\t\t<li><a href=\"#h%d\">", chapter_index + 1);
+				print_text_simple(&ctx, heading->text);
+				fprintf(f, "</a></li>\n");
+			}
+
+			fprintf(f,
+				"\t\t\t</ul>\n"
+				"\t\t</p>"
+			);
+		}
 	}
 
 	for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
