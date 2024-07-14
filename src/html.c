@@ -503,7 +503,10 @@ static void generate_html(const document* doc)
 				ctx.inline_chapter_ref_count = 0;
 
 				print_tabs(&ctx, ctx.depth);
-				fprintf(f, "<h1 id=\"h%d\">", chapter_index + 1);
+				if (doc->metadata.type == document_type_book)
+					fprintf(f, "<h1 id=\"h%d\">", chapter_index + 1);
+				else
+					fputs("<h1>", f);
 				print_text_block(&ctx, element->text);
 				fprintf(f, "</h1>");
 				break;
