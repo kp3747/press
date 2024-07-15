@@ -13,6 +13,7 @@ typedef enum
 	document_element_type_blockquote_begin,
 	document_element_type_ordered_list_end,
 	document_element_type_ordered_list_item,
+	document_element_type_blockquote_citation,
 	document_element_type_paragraph_break_begin,
 	document_element_type_ordered_list_begin_roman,
 	document_element_type_ordered_list_begin_arabic,

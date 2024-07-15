@@ -561,6 +561,15 @@ static void generate_html(const document* doc)
 				print_tabs(&ctx, --ctx.depth);
 				fputs("</blockquote>", f);
 				break;
+			case document_element_type_blockquote_citation:
+				print_tabs(&ctx, ctx.depth);
+				fputs("<p class=\"paragraph-break\">", f);
+				fputc(0xE2, f);
+				fputc(0x80, f);
+				fputc(0x94, f);
+				print_text_block(&ctx, element->text);
+				fputs("</p>", f);
+				break;
 			case document_element_type_ordered_list_begin_roman:
 				print_tabs(&ctx, ctx.depth++);
 				fputs("<ol type=\"I\">", f);

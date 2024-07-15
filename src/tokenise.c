@@ -621,6 +621,22 @@ static char tokenise_unordered_list(tokenise_context* ctx, char c)
 	return tokenise_paragraph(ctx, c, false);
 }
 
+static char tokenise_blockquote_citation(tokenise_context* ctx, char c)
+{
+	peek_state peek;
+	peek_init(ctx, &peek);
+
+	if (peek_char(ctx, &peek) == '-' && peek_char(ctx, &peek) == '-')
+	{
+		add_line_token(ctx, line_token_type_block_citation);
+		peek_apply(ctx, &peek);
+
+		return tokenise_text(ctx, get_char(ctx));
+	}
+
+	return tokenise_paragraph(ctx, c, true);
+}
+
 static char tokenise_blockquote(tokenise_context* ctx, char c)
 {
 	c = get_char(ctx);
@@ -628,6 +644,9 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	{
 	case '\n':
 		c = tokenise_newline(ctx, c, true);
+		break;
+	case '-':
+		c = tokenise_blockquote_citation(ctx, c);
 		break;
 	default:
 		c = tokenise_paragraph(ctx, c, true);

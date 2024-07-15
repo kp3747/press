@@ -11,6 +11,7 @@ typedef enum
 	line_token_type_preformatted,
 	line_token_type_block_newline,
 	line_token_type_unordered_list,
+	line_token_type_block_citation,
 	line_token_type_block_paragraph,
 	line_token_type_paragraph_break,
 	line_token_type_ordered_list_roman,

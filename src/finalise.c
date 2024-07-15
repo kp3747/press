@@ -105,6 +105,12 @@ static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
 		{
 			token = finalise_get_next_token(ctx);
 		}
+		else if (token->type == line_token_type_block_citation)
+		{
+			finalise_add_element(ctx, document_element_type_blockquote_citation, token->text);
+			token = finalise_get_next_token(ctx);
+			break;
+		}
 		else if (token->type == line_token_type_block_paragraph)
 		{
 			finalise_add_element(ctx, document_element_type_paragraph_begin, nullptr);

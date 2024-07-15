@@ -110,8 +110,8 @@ static line_token* validate_block_newline(validate_context* ctx, line_token* tok
 	++ctx->element_count;
 
 	token = validate_get_next_token(ctx);
-	if (token->type != line_token_type_block_paragraph)
-		handle_validate_error(ctx, "Blank lines within block quotes must be followed by an indented paragraph.");
+	if (token->type != line_token_type_block_paragraph && token->type != line_token_type_block_citation)
+		handle_validate_error(ctx, "Blank lines within block quotes must be followed by an indented paragraph or indented citation \"---\".");
 
 	return token;
 }
@@ -140,6 +140,20 @@ static line_token* validate_block_paragraph(validate_context* ctx, line_token* t
 	return token;
 }
 
+static line_token* validate_block_citation(validate_context* ctx, line_token* token)
+{
+	/*
+		NOTE: No need to increase element count as we will be appropriating the one added by the
+		previous new line.
+	*/
+
+	token = validate_get_next_token(ctx);
+	if (token->type != line_token_type_newline)
+		handle_validate_error(ctx, "Block quote citations must be followed by a blank unindented line.");
+
+	return token;
+}
+
 static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 {
 	ctx->element_count += 5;
@@ -151,6 +165,8 @@ static line_token* validate_blockquote(validate_context* ctx, line_token* token)
 			token = validate_block_newline(ctx, token);
 		else if (token->type == line_token_type_block_paragraph)
 			token = validate_block_paragraph(ctx, token);
+		else if (token->type == line_token_type_block_citation)
+			token = validate_block_citation(ctx, token);
 		else if (token->type == line_token_type_newline)
 			break;
 		else
@@ -210,6 +226,9 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			break;
 		case line_token_type_block_newline:
 			handle_validate_error(&ctx, "Block quotes may not begin with a blank line.");
+			break;
+		case line_token_type_block_citation:
+			handle_validate_error(&ctx, "Block quotes may not begin with a citation \"---\".");
 			break;
 		case line_token_type_block_paragraph:
 			token = validate_blockquote(&ctx, token);
