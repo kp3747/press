@@ -586,7 +586,15 @@ static void generate_html(const document* doc)
 				print_tabs(&ctx, --ctx.depth);
 				fputs("</ol>", f);
 				break;
-			case document_element_type_ordered_list_item:
+			case document_element_type_unordered_list_begin:
+				print_tabs(&ctx, ctx.depth++);
+				fputs("<ul>", f);
+				break;
+			case document_element_type_unordered_list_end:
+				print_tabs(&ctx, --ctx.depth);
+				fputs("</ul>", f);
+				break;
+			case document_element_type_list_item:
 				print_tabs(&ctx, ctx.depth);
 				fprintf(f, "<li>%s</li>", element->text);
 				break;

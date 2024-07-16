@@ -163,16 +163,33 @@ static line_token* finalise_paragraph_break(finalise_context* ctx, line_token* t
 static line_token* finalise_ordered_list(finalise_context* ctx, line_token* token, line_token_type line_type, document_element_type doc_type)
 {
 	finalise_add_element(ctx, doc_type, nullptr);
-	finalise_add_element(ctx, document_element_type_ordered_list_item, token->text);
+	finalise_add_element(ctx, document_element_type_list_item, token->text);
 
 	token = finalise_get_next_token(ctx);
 	while (token->type == line_type)
 	{
-		finalise_add_element(ctx, document_element_type_ordered_list_item, token->text);
+		finalise_add_element(ctx, document_element_type_list_item, token->text);
 		token = finalise_get_next_token(ctx);
 	}
 
 	finalise_add_element(ctx, document_element_type_ordered_list_end, nullptr);
+
+	return token;
+}
+
+static line_token* finalise_unordered_list(finalise_context* ctx, line_token* token)
+{
+	finalise_add_element(ctx, document_element_type_unordered_list_begin, nullptr);
+	finalise_add_element(ctx, document_element_type_list_item, token->text);
+
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_unordered_list)
+	{
+		finalise_add_element(ctx, document_element_type_list_item, token->text);
+		token = finalise_get_next_token(ctx);
+	}
+
+	finalise_add_element(ctx, document_element_type_unordered_list_end, nullptr);
 
 	return token;
 }
@@ -250,6 +267,9 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			break;
 		case line_token_type_ordered_list_letter:
 			token = finalise_ordered_list(&ctx, token, line_token_type_ordered_list_letter, document_element_type_ordered_list_begin_letter);
+			break;
+		case line_token_type_unordered_list:
+			token = finalise_unordered_list(&ctx, token);
 			break;
 		default:
 			token = finalise_get_next_token(&ctx);

@@ -351,6 +351,15 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			print_tabs(&ctx, --ctx.depth);
 			fputs("</blockquote>", f);
 			break;
+		case document_element_type_blockquote_citation:
+			print_tabs(&ctx, ctx.depth);
+			fputs("<p class=\"paragraph-break\">", f);
+			fputc(0xE2, f);
+			fputc(0x80, f);
+			fputc(0x94, f);
+			print_text_block(&ctx, element->text);
+			fputs("</p>", f);
+			break;
 		case document_element_type_ordered_list_begin_roman:
 			print_tabs(&ctx, ctx.depth++);
 			fputs("<ol type=\"I\">", f);
@@ -367,7 +376,15 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			print_tabs(&ctx, --ctx.depth);
 			fputs("</ol>", f);
 			break;
-		case document_element_type_ordered_list_item:
+		case document_element_type_unordered_list_begin:
+			print_tabs(&ctx, ctx.depth++);
+			fputs("<ul>", f);
+			break;
+		case document_element_type_unordered_list_end:
+			print_tabs(&ctx, --ctx.depth);
+			fputs("</ul>", f);
+			break;
+		case document_element_type_list_item:
 			print_tabs(&ctx, ctx.depth);
 			fprintf(f, "<li>%s</li>", element->text);
 			break;

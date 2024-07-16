@@ -193,6 +193,23 @@ static line_token* validate_ordered_list(validate_context* ctx, line_token* toke
 	return token;
 }
 
+static line_token* validate_unordered_list(validate_context* ctx, line_token* token)
+{
+	ctx->element_count += 3;
+
+	token = validate_get_next_token(ctx);
+	while (token->type == line_token_type_unordered_list)
+	{
+		++ctx->element_count;
+		token = validate_get_next_token(ctx);
+	}
+
+	if (token->type != line_token_type_newline)
+		handle_validate_error(ctx, "List items must be followed by a blank line.");
+
+	return token;
+}
+
 static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 {
 	validate_context ctx = {
@@ -253,6 +270,8 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 		case line_token_type_ordered_list_letter:
 			token = validate_ordered_list(&ctx, token, line_token_type_ordered_list_letter);
 			break;
+		case line_token_type_unordered_list:
+			token = validate_unordered_list(&ctx, token);
 		default:
 			token = validate_get_next_token(&ctx);
 		}
