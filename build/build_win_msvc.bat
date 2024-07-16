@@ -62,8 +62,7 @@ rem Invoke compiler
 %vc_compiler% ^
 %optimization% ^
 /Zi ^
-/W3 /wd4200 /wd4007 /wd4018 ^
-/std:c++latest /permissive- ^
+/W3 /wd4007 ^
 /Oi /GS- /DYNAMICBASE:NO /fp:fast /Gv /diagnostics:caret ^
 /nologo ^
 /D _CRT_SECURE_NO_WARNINGS ^
