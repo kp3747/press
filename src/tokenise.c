@@ -5,6 +5,21 @@ typedef enum
 	emphasis_state_emphasis
 } emphasis_state;
 
+static void handle_loc_error(uint32_t line, uint32_t column, const char* format, ...)
+{
+	fprintf(stderr, "Parsing error (line %u, column %u): ", line, column);
+
+	va_list args;
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	fputc('\n', stderr);
+
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
 static void handle_peek_error(const peek_state* peek, const char* format, ...)
 {
 	fprintf(stderr, "Parsing error (line %u, column %u): ", peek->line, peek->column);
@@ -68,6 +83,8 @@ static char peek_char_internal(tokenise_context* ctx, peek_state* peek)
 {
 	char c = *peek->read_ptr++;
 
+	peek->prev_line = peek->line;
+	peek->prev_column = peek->column;
 	peek->line = peek->next_line;
 	peek->column = peek->next_column;
 
@@ -376,7 +393,7 @@ static bool check_dash(tokenise_context* ctx, char c)
 			put_text_token(ctx, text_token_type_em_dash);
 
 			if (peek_char(ctx, &peek) == '-')
-				handle_tokenise_error(ctx, "Too many hyphens.");
+				handle_peek_error(&peek, "Too many hyphens.");
 		}
 		else
 		{
@@ -397,10 +414,8 @@ static bool check_newline(tokenise_context* ctx, char c)
 		// Null terminate
 		put_char(ctx, 0);
 
-		peek_state peek;
-		peek_init(ctx, &peek);
-		if (peek_char(ctx, &peek) == ' ')
-			handle_tokenise_error(ctx, "Trailing spaces are not permitted.");
+		if (ctx->peek.pc == ' ')
+			handle_loc_error(ctx->peek.prev_line, ctx->peek.prev_column, "Trailing spaces are not permitted.");
 
 		return true;
 	}

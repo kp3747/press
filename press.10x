@@ -28,7 +28,6 @@
 		</Configurations>
 		<Platforms>
 			<Platform>x64</Platform>
-			<Platform>Win32</Platform>
 		</Platforms>
 		<AdditionalIncludePaths>
 			<AdditionalIncludePath></AdditionalIncludePath>
@@ -40,8 +39,17 @@
 				<Defines></Defines>
 				<ForceIncludes></ForceIncludes>
 			</ConfigAndPlatform>
+			<ConfigAndPlatform>
+				<Name>debug:x64</Name>
+				<Defines></Defines>
+				<ForceIncludes></ForceIncludes>
+			</ConfigAndPlatform>
 			<Config>
 				<Name>Debug</Name>
+				<Defines></Defines>
+			</Config>
+			<Config>
+				<Name>debug</Name>
 				<Defines></Defines>
 			</Config>
 			<Platform>

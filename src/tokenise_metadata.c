@@ -145,7 +145,7 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 		else if (c == ']')
 		{
 			if (peek.pc == ' ')
-				handle_peek_error(&peek, "Trailing spaces are not permitted.");
+				handle_loc_error(peek.prev_line, peek.prev_column, "Trailing spaces are not permitted.");
 
 			break;
 		}

@@ -201,6 +201,14 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 	};
 
 	line_token* token = validate_get_next_token(&ctx);
+
+	// For now we require the first printable element to be a top-level heading
+	while (token->type == line_token_type_newline)
+		token = validate_get_next_token(&ctx);
+
+	if (token->type != line_token_type_heading_1)
+		handle_validate_error(&ctx, "The first printable element must be a top-level heading.");
+
 	for (;;)
 	{
 		switch (token->type)
