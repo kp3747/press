@@ -70,6 +70,7 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 	line->text = ctx->write_ptr;
 
 #ifndef NDEBUG
+	// Make it easier to read tokens in the watch window
 	if (type == line_token_type_newline || type == line_token_type_eof)
 		line->text = nullptr;
 #endif
@@ -705,23 +706,30 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 	return c;
 }
 
+/*
+	"//" at the start of a line represents a single-line comment. Lines that start with a single
+	slash are considered paragraphs.
+*/
 static char tokenise_comment(tokenise_context* ctx, char c)
 {
 	peek_state peek;
 	peek_init(ctx, &peek);
 
+	// Check for "//"
 	if (peek_char(ctx, &peek) == '/')
 	{
 		peek_apply(ctx, &peek);
 
 		for (;;)
 		{
+			// Skip past line
 			c = get_char(ctx);
 			if (c == '\n')
 				return get_char(ctx);
 		}
 	}
 
+	// Not a comment
 	return tokenise_paragraph(ctx, c, false);
 }
 
@@ -738,6 +746,12 @@ static void tokenise(char* data, line_tokens* out_tokens, document_metadata* met
 		.metadata			= metadata
 	};
 
+	/*
+		This loop checks the first character of each line and delegates parsing to specialised
+		tokenisation functions. Sometimes the first character may be a false positive, in which case
+		tokenisation is delegated to the more appropriate function. For example, a line starting
+		with "1. " represents a list item, whereas "1 apple" would represent a paragraph.
+	*/
 	char c = get_char(&ctx);
 	for (;;)
 	{
@@ -765,7 +779,10 @@ static void tokenise(char* data, line_tokens* out_tokens, document_metadata* met
 			c = tokenise_paragraph(&ctx, c, false);
 	}
 
-	// Make later parsing simpler
+	/*
+		Make later parsing simpler by allowing validadation functions to check for only new lines,
+		without having to also check for end of file.
+	*/
 	add_line_token(&ctx, line_token_type_newline);
 
 	add_line_token(&ctx, line_token_type_eof);

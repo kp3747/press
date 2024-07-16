@@ -29,32 +29,3 @@ static const char* roman_upper_strings[roman_numeral_max] = {
 	"XXV. ",
 	"XXVI. "
 };
-
-static const char* roman_lower_strings[roman_numeral_max] = {
-	"i. ",
-	"ii. ",
-	"iii. ",
-	"iv. ",
-	"v. ",
-	"vi. ",
-	"vii. ",
-	"viii. ",
-	"ix. ",
-	"x. ",
-	"xi. ",
-	"xii. ",
-	"xiii. ",
-	"xiv. ",
-	"xv. ",
-	"xvi. ",
-	"xvii. ",
-	"xviii. ",
-	"xix. ",
-	"xx. ",
-	"xxi. ",
-	"xxii. ",
-	"xxiii. ",
-	"xxiv. ",
-	"xxv. ",
-	"xxvi. "
-};
