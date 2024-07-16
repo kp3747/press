@@ -339,7 +339,7 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 		if (c == '*')
 		{
 			if (peek_char(ctx, &peek) == '*')
-				handle_tokenise_error(ctx, "Only two levels of '*' allowed.");
+				handle_peek_error(&peek, "Only two levels of '*' allowed.");
 
 			if (*state == emphasis_state_none)
 			{
@@ -353,7 +353,7 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 			}
 			else
 			{
-				handle_tokenise_error(ctx, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
+				handle_loc_error(peek.prev_line, peek.prev_column, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
 			}
 		}
 		else
@@ -370,9 +370,11 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 			}
 			else
 			{
-				handle_tokenise_error(ctx, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
+				handle_peek_error(&peek, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
 			}
 		}
+
+		peek_apply(ctx, &peek);
 
 		return true;
 	}
