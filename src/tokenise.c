@@ -338,6 +338,8 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 		c = peek_char(ctx, &peek);
 		if (c == '*')
 		{
+			peek_apply(ctx, &peek);
+
 			if (peek_char(ctx, &peek) == '*')
 				handle_peek_error(&peek, "Only two levels of '*' allowed.");
 
@@ -373,8 +375,6 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 				handle_peek_error(&peek, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
 			}
 		}
-
-		peek_apply(ctx, &peek);
 
 		return true;
 	}
