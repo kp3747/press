@@ -40,8 +40,9 @@ static void print_usage(void)
 		"\n"
 		"Flags:\n"
 		"  none    validates source file and produces no output\n"
-		"  --html  generates HTML output\n\n"
-		"  --epub  generates ePub2 output\n\n"
+		"  --odt   generates ODT OpenDocument text file\n\n"
+		"  --html  generates HTML webpage\n\n"
+		"  --epub  generates ePub2 eBook\n\n"
 	);
 
 	exit(EXIT_FAILURE);
@@ -93,6 +94,7 @@ static void delete_dir(const char* dir)
 
 int main(int argc, const char** argv)
 {
+	bool odt = false;
 	bool html = false;
 	bool epub = false;
 	const char* filepath = nullptr;
@@ -106,7 +108,9 @@ int main(int argc, const char** argv)
 	{
 		if (*argv[i] == '-')
 		{
-			if (strcmp(argv[i], "--html") == 0)
+			if (strcmp(argv[i], "--odt") == 0)
+				odt = true;
+			else if (strcmp(argv[i], "--html") == 0)
 				html = true;
 			else if (strcmp(argv[i], "--epub") == 0)
 				epub = true;
@@ -144,14 +148,15 @@ int main(int argc, const char** argv)
 	if (!doc.metadata.title)
 		doc.metadata.title = copy_filename(filepath);
 
-	if (html || epub)
+	if (odt || html || epub)
 	{
 		delete_dir(output_dir);
 		create_dir(output_dir);
 
+		if (odt)
+			generate_odt(&doc);
 		if (html)
 			generate_html(&doc);
-
 		if (epub)
 			generate_epub(&doc);
 

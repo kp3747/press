@@ -69,3 +69,71 @@ static const char* generate_path(const char* format, ...)
 
 	return path;
 }
+
+static void print_tabs(FILE* f, int depth)
+{
+	fputc('\n', f);
+	for (int i = 0; i < depth; ++i)
+		fputc('\t', f);
+}
+
+static void print_en_dash(FILE* f)
+{
+	fputc(0xE2, f);
+	fputc(0x80, f);
+	fputc(0x93, f);
+}
+
+static void print_em_dash(FILE* f)
+{
+	fputc(0xE2, f);
+	fputc(0x80, f);
+	fputc(0x94, f);
+}
+
+static void print_apostrophe(FILE* f)
+{
+	fputc(0xE2, f);
+	fputc(0x80, f);
+	fputc(0x99, f);
+}
+
+static void print_quote_level_1_begin(FILE* f)
+{
+	fputc(0xE2, f);
+	fputc(0x80, f);
+	fputc(0x9C, f);
+}
+
+static void print_quote_level_1_end(FILE* f)
+{
+	fputc(0xE2, f);
+	fputc(0x80, f);
+	fputc(0x9D, f);
+}
+
+static void print_char(FILE* f, char c)
+{
+	if (c == text_token_type_en_dash)
+		print_en_dash(f);
+	else if (c == text_token_type_em_dash)
+		print_em_dash(f);
+	else if (c == '\'')
+		print_apostrophe(f);
+	else if (c == text_token_type_quote_level_1_begin)
+		print_quote_level_1_begin(f);
+	else if (c == text_token_type_quote_level_1_end)
+		print_quote_level_1_end(f);
+	else if (c == text_token_type_left_square_bracket)
+		fputc('[', f);
+	else if (c == text_token_type_right_square_bracket)
+		fputc(']', f);
+	else if (c >= ' ')
+		fputc(c, f);
+}
+
+static void print_simple_text(FILE* f, const char* text)
+{
+	while (*text)
+		print_char(f, *text++);
+}

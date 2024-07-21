@@ -1,63 +1,4 @@
-static void print_tabs(html_context* ctx, int depth)
-{
-	fputc('\n', ctx->f);
-
-	for (int i = 0; i < depth; ++i)
-		fputc('\t', ctx->f);
-}
-
-static void print_text_simple(html_context* ctx, const char* text)
-{
-	while (*text)
-	{
-		if (*text == text_token_type_en_dash)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x93, ctx->f);
-		}
-		else if (*text == text_token_type_em_dash)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x94, ctx->f);
-		}
-		else if (*text == '\'')
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x99, ctx->f);
-		}
-		else if (*text == text_token_type_quote_level_1_begin)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x9C, ctx->f);
-		}
-		else if (*text == text_token_type_quote_level_1_end)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x9D, ctx->f);
-		}
-		else if (*text == text_token_type_left_square_bracket)
-		{
-			fputc('[', ctx->f);
-		}
-		else if (*text == text_token_type_right_square_bracket)
-		{
-			fputc(']', ctx->f);
-		}
-		else if (*text >= ' ')
-		{
-			fputc(*text, ctx->f);
-		}
-
-		++text;
-	}
-}
-
-static void print_text_block(html_context* ctx, const char* text)
+static void print_html_text_block(html_context* ctx, const char* text)
 {
 	while (*text)
 	{
@@ -77,44 +18,6 @@ static void print_text_block(html_context* ctx, const char* text)
 		{
 			fputs("</em>", ctx->f);
 		}
-		else if (*text == text_token_type_en_dash)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x93, ctx->f);
-		}
-		else if (*text == text_token_type_em_dash)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x94, ctx->f);
-		}
-		else if (*text == '\'')
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x99, ctx->f);
-		}
-		else if (*text == text_token_type_quote_level_1_begin)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x9C, ctx->f);
-		}
-		else if (*text == text_token_type_quote_level_1_end)
-		{
-			fputc(0xE2, ctx->f);
-			fputc(0x80, ctx->f);
-			fputc(0x9D, ctx->f);
-		}
-		else if (*text == text_token_type_left_square_bracket)
-		{
-			fputc('[', ctx->f);
-		}
-		else if (*text == text_token_type_right_square_bracket)
-		{
-			fputc(']', ctx->f);
-		}
 		else if (*text == text_token_type_reference)
 		{
 			const uint32_t ref_count = ctx->inline_ref_count++ + 1;
@@ -124,12 +27,12 @@ static void print_text_block(html_context* ctx, const char* text)
 			const document_reference* reference = &chapter->references[chapter_ref_count];
 
 			fprintf(ctx->f, "<sup><a id=\"ref-return%d\" href=\"#ref%d\" title=\"", ref_count, ref_count);
-			print_text_simple(ctx, reference->text);
+			print_simple_text(ctx->f, reference->text);
 			fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
 		}
-		else if (*text >= ' ')
+		else
 		{
-			fputc(*text, ctx->f);
+			print_char(ctx->f, *text);
 		}
 
 		++text;
@@ -428,8 +331,7 @@ static void generate_html(const document* doc)
 
 	html_context ctx = {
 		.f		= f,
-		.doc	= doc,
-		.depth	= 2
+		.doc	= doc
 	};
 
 	fputs(
@@ -492,7 +394,7 @@ static void generate_html(const document* doc)
 				document_element* heading = doc->chapters[chapter_index].elements;
 
 				fprintf(f, "\t\t\t\t<li><a href=\"#h%d\">", chapter_index + 1);
-				print_text_simple(&ctx, heading->text);
+				print_simple_text(ctx.f, heading->text);
 				fprintf(f, "</a></li>\n");
 			}
 
@@ -502,6 +404,8 @@ static void generate_html(const document* doc)
 			);
 		}
 	}
+
+	int depth = 2;
 
 	for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
 	{
@@ -518,84 +422,82 @@ static void generate_html(const document* doc)
 				ctx.chapter_ref_count = 0;
 				ctx.inline_chapter_ref_count = 0;
 
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				if (doc->metadata.type == document_type_book)
 					fprintf(f, "<h1 id=\"h%d\">", chapter_index + 1);
 				else
 					fputs("<h1>", f);
-				print_text_block(&ctx, element->text);
+				print_html_text_block(&ctx, element->text);
 				fprintf(f, "</h1>");
 				break;
 			case document_element_type_heading_2:
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				fprintf(f, "<h2>%s</h2>", element->text);
 				break;
 			case document_element_type_heading_3:
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				fprintf(f, "<h3>%s</h3>", element->text);
 				break;
 			case document_element_type_text_block:
-				print_tabs(&ctx, ctx.depth + 1);
-				print_text_block(&ctx, element->text);
+				print_tabs(f, depth + 1);
+				print_html_text_block(&ctx, element->text);
 				break;
 			case document_element_type_line_break:
 				fputs("<br>", f);
 				break;
 			case document_element_type_paragraph_begin:
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				fputs("<p>", f);
 				break;
 			case document_element_type_paragraph_break_begin:
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				fputs("<p class=\"paragraph-break\">", f);
 				break;
 			case document_element_type_paragraph_end:
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				fputs("</p>", f);
 				break;
 			case document_element_type_blockquote_begin:
-				print_tabs(&ctx, ctx.depth++);
+				print_tabs(f, depth++);
 				fputs("<blockquote>", f);
 				break;
 			case document_element_type_blockquote_end:
-				print_tabs(&ctx, --ctx.depth);
+				print_tabs(f, --depth);
 				fputs("</blockquote>", f);
 				break;
 			case document_element_type_blockquote_citation:
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				fputs("<p class=\"paragraph-break\">", f);
-				fputc(0xE2, f);
-				fputc(0x80, f);
-				fputc(0x94, f);
-				print_text_block(&ctx, element->text);
+				print_em_dash(f);
+				print_html_text_block(&ctx, element->text);
 				fputs("</p>", f);
 				break;
 			case document_element_type_ordered_list_begin_roman:
-				print_tabs(&ctx, ctx.depth++);
+				print_tabs(f, depth++);
 				fputs("<ol type=\"I\">", f);
 				break;
 			case document_element_type_ordered_list_begin_arabic:
-				print_tabs(&ctx, ctx.depth++);
+				print_tabs(f, depth++);
 				fputs("<ol>", f);
 				break;
 			case document_element_type_ordered_list_begin_letter:
-				print_tabs(&ctx, ctx.depth++);
+				print_tabs(f, depth++);
 				fputs("<ol type=\"a\">", f);
 				break;
 			case document_element_type_ordered_list_end:
-				print_tabs(&ctx, --ctx.depth);
+				print_tabs(f, --depth);
 				fputs("</ol>", f);
 				break;
 			case document_element_type_unordered_list_begin:
-				print_tabs(&ctx, ctx.depth++);
+				print_tabs(f, depth++);
 				fputs("<ul>", f);
 				break;
 			case document_element_type_unordered_list_end:
-				print_tabs(&ctx, --ctx.depth);
+				print_tabs(f, --depth);
 				fputs("</ul>", f);
 				break;
 			case document_element_type_list_item:
-				print_tabs(&ctx, ctx.depth);
+				print_tabs(f, depth);
 				fprintf(f, "<li>%s</li>", element->text);
 				break;
 			}
@@ -611,15 +513,16 @@ static void generate_html(const document* doc)
 				document_reference* reference = &chapter->references[reference_index];
 				fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
 				fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
-				print_text_block(&ctx, reference->text);
+				print_html_text_block(&ctx, reference->text);
 				fprintf(f, "\n\t\t</p>");
 			}
 		}
 	}
 
-	fprintf(f,
+	fputs(
 		"\n\t</body>\n"
-		"</html>"
+		"</html>",
+		f
 	);
 
 	fclose(f);

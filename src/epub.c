@@ -240,7 +240,7 @@ static void create_epub_toc(const document* doc)
 	html_context ctx = {
 		.f		= f,
 		.doc	= doc,
-		.depth	= 2
+		//.depth	= 2
 	};
 
 	fprintf(f,
@@ -261,7 +261,7 @@ static void create_epub_toc(const document* doc)
 		document_element* heading = doc->chapters[chapter_index].elements;
 
 		fprintf(f, "\t\t\t\t<li><a href=\"chapter%d.xhtml\">", chapter_index + 1);
-		print_text_simple(&ctx, heading->text);
+		print_simple_text(ctx.f, heading->text);
 		fprintf(f, "</a></li>\n");
 	}
 
@@ -282,7 +282,6 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 	html_context ctx = {
 		.f				= f,
 		.doc			= doc,
-		.depth			= 2,
 		.chapter_index	= index
 	};
 
@@ -299,6 +298,8 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 		chapter->elements[0].text
 	);
 
+	int depth = 2;
+
 	for (uint32_t element_index = 0; element_index < chapter->element_count; ++element_index)
 	{
 		document_element* element = &chapter->elements[element_index];
@@ -309,81 +310,79 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			ctx.chapter_ref_count = 0;
 			ctx.inline_chapter_ref_count = 0;
 
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fprintf(f, "<h1>");
-			print_text_block(&ctx, element->text);
+			print_html_text_block(&ctx, element->text);
 			fprintf(f, "</h1>");
 			break;
 		case document_element_type_heading_2:
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fprintf(f, "<h2>%s</h2>", element->text);
 			break;
 		case document_element_type_heading_3:
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fprintf(f, "<h3>%s</h3>", element->text);
 			break;
 		case document_element_type_text_block:
-			print_tabs(&ctx, ctx.depth + 1);
-			print_text_block(&ctx, element->text);
+			print_tabs(f, depth + 1);
+			print_html_text_block(&ctx, element->text);
 			break;
 		case document_element_type_line_break:
 			fputs("<br/>", f);
 			break;
 		case document_element_type_paragraph_begin:
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fputs("<p>", f);
 			break;
 		case document_element_type_paragraph_break_begin:
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fputs("<p class=\"paragraph-break\">", f);
 			break;
 		case document_element_type_paragraph_end:
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fputs("</p>", f);
 			break;
 		case document_element_type_blockquote_begin:
-			print_tabs(&ctx, ctx.depth++);
+			print_tabs(f, depth++);
 			fputs("<blockquote>", f);
 			break;
 		case document_element_type_blockquote_end:
-			print_tabs(&ctx, --ctx.depth);
+			print_tabs(f, --depth);
 			fputs("</blockquote>", f);
 			break;
 		case document_element_type_blockquote_citation:
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fputs("<p class=\"paragraph-break\">", f);
-			fputc(0xE2, f);
-			fputc(0x80, f);
-			fputc(0x94, f);
-			print_text_block(&ctx, element->text);
+			print_em_dash(f);
+			print_html_text_block(&ctx, element->text);
 			fputs("</p>", f);
 			break;
 		case document_element_type_ordered_list_begin_roman:
-			print_tabs(&ctx, ctx.depth++);
+			print_tabs(f, depth++);
 			fputs("<ol type=\"I\">", f);
 			break;
 		case document_element_type_ordered_list_begin_arabic:
-			print_tabs(&ctx, ctx.depth++);
+			print_tabs(f, depth++);
 			fputs("<ol>", f);
 			break;
 		case document_element_type_ordered_list_begin_letter:
-			print_tabs(&ctx, ctx.depth++);
+			print_tabs(f, depth++);
 			fputs("<ol type=\"a\">", f);
 			break;
 		case document_element_type_ordered_list_end:
-			print_tabs(&ctx, --ctx.depth);
+			print_tabs(f, --depth);
 			fputs("</ol>", f);
 			break;
 		case document_element_type_unordered_list_begin:
-			print_tabs(&ctx, ctx.depth++);
+			print_tabs(f, depth++);
 			fputs("<ul>", f);
 			break;
 		case document_element_type_unordered_list_end:
-			print_tabs(&ctx, --ctx.depth);
+			print_tabs(f, --depth);
 			fputs("</ul>", f);
 			break;
 		case document_element_type_list_item:
-			print_tabs(&ctx, ctx.depth);
+			print_tabs(f, depth);
 			fprintf(f, "<li>%s</li>", element->text);
 			break;
 		}
@@ -399,14 +398,15 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			document_reference* reference = &chapter->references[reference_index];
 			fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
 			fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
-			print_text_block(&ctx, reference->text);
+			print_html_text_block(&ctx, reference->text);
 			fprintf(f, "\n\t\t</p>");
 		}
 	}
 
-	fprintf(f,
+	fputs(
 		"\n\t</body>\n"
-		"</html>"
+		"</html>",
+		f
 	);
 
 	fclose(f);

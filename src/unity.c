@@ -8,6 +8,7 @@
 
 #include "roman_numeral.c"
 #include "main.c"
+#include "odt.c"
 #include "html.c"
 #include "epub.c"
 #include "validate.c"
