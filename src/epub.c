@@ -1,9 +1,7 @@
 static void create_epub_mimetype(void)
 {
 	FILE* f = open_file(OUTPUT_DIR "/epub/mimetype", file_mode_write);
-
 	fputs("application/epub+zip", f);
-
 	fclose(f);
 }
 
@@ -171,7 +169,7 @@ static void create_epub_opf(const document* doc)
 //	fprintf(f, "\t\t<item id=\"cover\" href=\"cover.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
 //	fprintf(f, "\t\t<item id=\"cover_image\" href=\"cover.png\" media-type=\"image/png\"/>\n");
 
-	if (doc->chapter_count > 0)
+	if (doc->chapter_count > 1)
 		fprintf(f, "\t\t<item id=\"toc\" href=\"toc.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)
@@ -182,7 +180,7 @@ static void create_epub_opf(const document* doc)
 
 	//fputs("\t\t<itemref idref=\"cover\"/>\n", f);
 
-	if (doc->chapter_count > 0)
+	if (doc->chapter_count > 1)
 		fputs("\t\t<itemref idref=\"toc\"/>\n", f);
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)
@@ -234,7 +232,7 @@ static void create_epub_ncx(const document* doc)
 
 static void create_epub_toc(const document* doc)
 {
-	if (doc->chapter_count == 0)
+	if (doc->chapter_count > 1)
 		return;
 
 	FILE* f = open_file(OUTPUT_DIR "/epub/toc.xhtml", file_mode_write);
