@@ -226,7 +226,7 @@ static void create_html_css(void)
 	// Chapter headings are centred
 	fputs(
 		"h1 {\n\t"
-			"text-align: center;\n\t"
+			"text-align: center;\n"//\t"
 			//"page-break-before: always;\n" // Ensures chapters start on a new page when printed
 		"}",
 		f
@@ -482,7 +482,7 @@ static void generate_html(const document* doc)
 		if (doc->chapter_count > 1)
 		{
 			fprintf(f,
-				"\n\t\t<h1>Table of Contents</h1>\n"
+				"\n\t\t<h1>Contents</h1>\n"
 				"\t\t<p>\n"
 				"\t\t\t<ul class=\"chapters\">\n"
 			);

@@ -249,11 +249,11 @@ static void create_epub_toc(const document* doc)
 		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
 		"\t<head>\n"
-		"\t\t<title>Table of Contents</title>\n"
+		"\t\t<title>Contents</title>\n"
 		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
 		"\t</head>\n"
 		"\t<body>\n"
-		"\t\t<h1>Table of Contents</h1>\n"
+		"\t\t<h1>Contents</h1>\n"
 		"\t\t<p>\n"
 		"\t\t\t<ul class=\"chapters\">"
 	);
