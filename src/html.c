@@ -439,7 +439,6 @@ static void generate_html(const document* doc)
 				fprintf(f, "<h3>%s</h3>", element->text);
 				break;
 			case document_element_type_text_block:
-				print_tabs(f, depth + 1);
 				print_html_text_block(&ctx, element->text);
 				break;
 			case document_element_type_line_break:
@@ -454,7 +453,6 @@ static void generate_html(const document* doc)
 				fputs("<p class=\"paragraph-break\">", f);
 				break;
 			case document_element_type_paragraph_end:
-				print_tabs(f, depth);
 				fputs("</p>", f);
 				break;
 			case document_element_type_blockquote_begin:
