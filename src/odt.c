@@ -254,7 +254,6 @@ static void generate_odt_content(const document* doc)
 				fprintf(f, "</text:h>");
 				break;
 			case document_element_type_text_block:
-				print_tabs(f, depth + 1);
 				print_odt_text_block(f, element->text);
 				break;
 			case document_element_type_line_break:
@@ -293,7 +292,6 @@ static void generate_odt_content(const document* doc)
 
 				break;
 			case document_element_type_paragraph_end:
-				print_tabs(f, depth);
 				fputs("</text:p>", f);
 				break;
 			case document_element_type_blockquote_begin:
