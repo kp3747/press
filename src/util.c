@@ -32,13 +32,23 @@ static FILE* open_file(const char* path, file_mode mode)
 	if (mode == file_mode_read)
 		mode_string = "rb";
 	else
-		mode_string = "w";
+		mode_string = "wb";
 
 	FILE* f = fopen(path, mode_string);
 	if (!f)
 		handle_error("Unable to open file \"%s\": %s.\n", path, strerror(errno));
 
 	return f;
+}
+
+static uint32_t get_file_size(FILE* f)
+{
+	// Get file size
+	fseek(f, 0, SEEK_END);
+	const long size = ftell(f);
+	rewind(f);
+
+	return size;
 }
 
 static void handle_error(const char* format, ...)

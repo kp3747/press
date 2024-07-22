@@ -6,6 +6,7 @@ typedef enum
 
 static void			create_dir(const char* dir);
 static FILE*		open_file(const char* path, file_mode mode);
+static uint32_t		get_file_size(FILE* f);
 static void			handle_error(const char* format, ...);
 static const char*	generate_path(const char* format, ...);
 static void			print_tabs(FILE* f, int depth);

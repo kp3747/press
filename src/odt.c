@@ -378,4 +378,20 @@ static void generate_odt(const document* doc)
 	create_odt_meta_inf();
 	create_odt_styles();
 	generate_odt_content(doc);
+
+	const char* inputs[] = {
+		OUTPUT_DIR "/odt/mimetype",
+		OUTPUT_DIR "/odt/META-INF/manifest.xml",
+		OUTPUT_DIR "/odt/styles.xml",
+		OUTPUT_DIR "/odt/content.xml"
+	};
+
+	const char* outputs[] = {
+		"mimetype",
+		"META-INF/manifest.xml",
+		"styles.xml",
+		"content.xml"
+	};
+
+	generate_zip(OUTPUT_DIR "\\test.odt", inputs, outputs, 4);
 }

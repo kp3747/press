@@ -14,6 +14,8 @@
 #include "validate.c"
 #include "finalise.c"
 #include "util.c"
+#include "zip.c"
+#include "crc32.c"
 
 #include "tokenise_internal.h"
 #include "tokenise_metadata.c"

@@ -1,11 +1,7 @@
 static char* load_file(const char* filepath)
 {
 	FILE* f = open_file(filepath, file_mode_read);
-
-	// Get file size
-	fseek(f, 0, SEEK_END);
-	const long size = ftell(f);
-	rewind(f);
+	const uint32_t size = get_file_size(f);
 
 	/*
 		Allocate enough memory plus two bytes:
