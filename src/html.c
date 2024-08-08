@@ -500,7 +500,9 @@ static void generate_html(const document* doc)
 				break;
 			case document_element_type_list_item:
 				print_tabs(f, depth);
-				fprintf(f, "<li>%s</li>", element->text);
+				fputs("<li>", f);
+				print_html_text_block(&ctx, element->text);
+				fprintf(f, "</li>");
 				break;
 			}
 		}

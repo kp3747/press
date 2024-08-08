@@ -239,8 +239,7 @@ static void create_epub_toc(const document* doc)
 
 	html_context ctx = {
 		.f		= f,
-		.doc	= doc,
-		//.depth	= 2
+		.doc	= doc
 	};
 
 	fprintf(f,
@@ -387,7 +386,9 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			break;
 		case document_element_type_list_item:
 			print_tabs(f, depth);
-			fprintf(f, "<li>%s</li>", element->text);
+			fputs("<li>", f);
+			print_html_text_block(&ctx, element->text);
+			fprintf(f, "</li>");
 			break;
 		}
 	}
