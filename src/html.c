@@ -432,11 +432,15 @@ static void generate_html(const document* doc)
 				break;
 			case document_element_type_heading_2:
 				print_tabs(f, depth);
-				fprintf(f, "<h2>%s</h2>", element->text);
+				fputs("<h2>", f);
+				print_html_text_block(&ctx, element->text);
+				fprintf(f, "</h2>");
 				break;
 			case document_element_type_heading_3:
 				print_tabs(f, depth);
-				fprintf(f, "<h3>%s</h3>", element->text);
+				fputs("<h3>", f);
+				print_html_text_block(&ctx, element->text);
+				fprintf(f, "</h3>");
 				break;
 			case document_element_type_text_block:
 				print_html_text_block(&ctx, element->text);
