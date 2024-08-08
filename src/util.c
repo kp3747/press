@@ -138,7 +138,7 @@ static void print_char(FILE* f, char c)
 		fputc('[', f);
 	else if (c == text_token_type_right_square_bracket)
 		fputc(']', f);
-	else if (c >= ' ')
+	else
 		fputc(c, f);
 }
 
