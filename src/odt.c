@@ -390,6 +390,8 @@ static void generate_odt(const document* doc)
 		"styles.xml",
 		"content.xml"
 	};
+	const uint32_t output_count = sizeof(outputs) / sizeof(const char*);
 
-	generate_zip(OUTPUT_DIR "\\test.odt", inputs, outputs, 4);
+	const char* odt_path = generate_path(OUTPUT_DIR "/%s.odt", doc->metadata.title);
+	generate_zip(odt_path, inputs, outputs, output_count);
 }

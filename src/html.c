@@ -39,24 +39,29 @@ static void print_html_text_block(html_context* ctx, const char* text)
 	}
 }
 
-static const char* generate_url_path(const char* filepath, const char* ext)
+static const char* generate_url_path(const char* title, const char* ext)
 {
-	assert(filepath);
-	assert(*filepath);
+	assert(title);
+	assert(*title);
 	assert(ext);
 	assert(*ext);
 	assert(*ext != '.');
 
-	char buffer[256];
-	char* current = buffer;
+	// Allocate worst-case size (output_dir + '/' + title + null terminator)
+	const int64_t buffer_size = output_len + 1 + strlen(title) + 1;
+	char* buffer = malloc(buffer_size);
 
+	// Copy output directory path
+	char* current = buffer;
 	memcpy(current, output_dir, output_len);
 	current += output_len;
 	*current++ = '/';
 
+	// Normalise title to a web-safe filename
+	const char* title_begin = current;
 	for (;;)
 	{
-		const char c = *filepath++;
+		const char c = *title++;
 
 		if (c >= 'a' && c <= 'z')
 			*current++ = c;
@@ -81,14 +86,10 @@ static const char* generate_url_path(const char* filepath, const char* ext)
 	*current++ = 0;
 
 	// TODO: Add metadata option to override filename
-	if (current == buffer)
+	if (current == title_begin)
 		handle_error("Unable to generate web-safe filename from title.");
 
-	const int64_t size = current - buffer;
-	char* url_path = malloc(size);
-	memcpy(url_path, buffer, size);
-
-	return url_path;
+	return buffer;
 }
 
 static void create_html_css(void)
