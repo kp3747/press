@@ -395,4 +395,6 @@ static void generate_odt(const document* doc)
 
 	const char* odt_path = generate_path(OUTPUT_DIR "/%s.odt", doc->metadata.title);
 	generate_zip(odt_path, inputs, outputs, output_count);
+
+	delete_dir(OUTPUT_DIR "\\odt");
 }

@@ -472,4 +472,6 @@ static void generate_epub(const document* doc)
 
 	const char* epub_path = generate_path(OUTPUT_DIR "/%s.epub", doc->metadata.title);
 	generate_zip(epub_path, inputs, outputs, file_count);
+
+	delete_dir(OUTPUT_DIR "\\epub");
 }
