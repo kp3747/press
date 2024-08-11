@@ -79,15 +79,6 @@ static const char* copy_filename(const char* filepath)
 	return filename;
 }
 
-static void delete_dir(const char* dir)
-{
-	char buffer[256];
-	const int len = snprintf(buffer, sizeof(buffer), "rmdir %s /s /q >nul 2>nul", dir);
-	assert(len < sizeof(buffer));
-
-	system(buffer);
-}
-
 int main(int argc, const char** argv)
 {
 	bool odt = false;
@@ -104,7 +95,9 @@ int main(int argc, const char** argv)
 	{
 		if (*argv[i] == '-')
 		{
-			if (strcmp(argv[i], "--odt") == 0)
+			if (strcmp(argv[i], "--all") == 0)
+				odt = html = epub = true;
+			else if (strcmp(argv[i], "--odt") == 0)
 				odt = true;
 			else if (strcmp(argv[i], "--html") == 0)
 				html = true;

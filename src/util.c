@@ -1,3 +1,11 @@
+/*
+	TODO: Handle any filename length. Perhaps we could just add a global buffer of the maximum
+	possible size and reuse between functions? For example 64 KiB * 4 = 256KiB. I believe Windows
+	supports ~INT16_MAX for UTF-16. To be safe we could use UINT16_MAX * 4 (max UTF-8 length). For
+	reference the max Linux file path is a more reasonable 4096. We could just support that and
+	report an error if a path length exceeds that. In fact, that sounds like a good idea.
+*/
+
 static void create_dir(const char* dir)
 {
 	char buffer[256];
@@ -6,7 +14,16 @@ static void create_dir(const char* dir)
 
 	const int ret = system(buffer);
 	if (ret)
-		handle_error("Unable to create directory \"%s/\"", dir);
+		handle_error("Unable to create directory \"%s/\". Do you have a previously generated file open?", dir);
+}
+
+static void delete_dir(const char* dir)
+{
+	char buffer[256];
+	const int len = snprintf(buffer, sizeof(buffer), "rmdir %s /s /q >nul 2>nul", dir);
+	assert(len < sizeof(buffer));
+
+	system(buffer);
 }
 
 static FILE* open_file(const char* path, file_mode mode)
