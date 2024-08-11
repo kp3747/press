@@ -419,7 +419,6 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 
 static void generate_epub(const document* doc)
 {
-	delete_dir(OUTPUT_DIR "\\epub");
 	create_dir(OUTPUT_DIR "\\epub\\META-INF");
 
 	create_epub_mimetype();
@@ -431,4 +430,46 @@ static void generate_epub(const document* doc)
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)
 		create_epub_chapter(doc, i);
+
+	uint32_t file_count = 5;
+	file_count += doc->chapter_count;
+	if (doc->chapter_count > 1)
+		++file_count;
+	const int64_t array_size = sizeof(const char**) * file_count;
+
+	const char** inputs = malloc(array_size);
+	const char** outputs = malloc(array_size);
+
+	inputs[0] = OUTPUT_DIR "/epub/mimetype";
+	outputs[0] = "mimetype";
+
+	inputs[1] = OUTPUT_DIR "/epub/META-INF/container.xml";
+	outputs[1] = "META-INF/container.xml";
+
+	inputs[2] = OUTPUT_DIR "/epub/style.css";
+	outputs[2] = "style.css";
+
+	inputs[3] = OUTPUT_DIR "/epub/content.opf";
+	outputs[3] = "content.opf";
+
+	inputs[4] = OUTPUT_DIR "/epub/toc.ncx";
+	outputs[4] = "toc.ncx";
+
+	inputs[5] = OUTPUT_DIR "/epub/chapter1.xhtml";
+	outputs[5] = "chapter1.xhtml";
+
+	if (doc->chapter_count > 1)
+	{
+		inputs[6] = OUTPUT_DIR "/epub/toc.xhtml";
+		outputs[6] = "toc.xhtml";
+
+		for (uint32_t i = 1; i < doc->chapter_count; ++i)
+		{
+			inputs[6 + i] = generate_path(OUTPUT_DIR "/epub/chapter%d.xhtml", i + 1);
+			outputs[6 + i] = generate_path("chapter%d.xhtml", i + 1);
+		}
+	}
+
+	const char* epub_path = generate_path(OUTPUT_DIR "/%s.epub", doc->metadata.title);
+	generate_zip(epub_path, inputs, outputs, file_count);
 }

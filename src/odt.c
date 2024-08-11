@@ -369,7 +369,6 @@ static void generate_odt_content(const document* doc)
 
 static void generate_odt(const document* doc)
 {
-	delete_dir(OUTPUT_DIR "\\odt");
 	create_dir(OUTPUT_DIR "\\odt\\META-INF");
 
 	create_odt_mimetype();
@@ -383,6 +382,7 @@ static void generate_odt(const document* doc)
 		OUTPUT_DIR "/odt/styles.xml",
 		OUTPUT_DIR "/odt/content.xml"
 	};
+	const uint32_t input_count = sizeof(inputs) / sizeof(const char*);
 
 	const char* outputs[] = {
 		"mimetype",
@@ -390,6 +390,7 @@ static void generate_odt(const document* doc)
 		"styles.xml",
 		"content.xml"
 	};
+	static_assert(sizeof(outputs) == sizeof(inputs));
 	const uint32_t output_count = sizeof(outputs) / sizeof(const char*);
 
 	const char* odt_path = generate_path(OUTPUT_DIR "/%s.odt", doc->metadata.title);

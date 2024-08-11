@@ -47,8 +47,8 @@ static const char* generate_url_path(const char* title, const char* ext)
 	assert(*ext);
 	assert(*ext != '.');
 
-	// Allocate worst-case size (output_dir + '/' + title + null terminator)
-	const int64_t buffer_size = output_len + 1 + strlen(title) + 1;
+	// Allocate worst-case size (output_dir + '/' + title + '.' + extension + null terminator)
+	const int64_t buffer_size = output_len + 1 + strlen(title) + 1 + strlen(ext) + 1;
 	char* buffer = malloc(buffer_size);
 
 	// Copy output directory path
