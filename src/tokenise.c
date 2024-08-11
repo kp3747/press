@@ -5,6 +5,21 @@ typedef enum
 	emphasis_state_emphasis
 } emphasis_state;
 
+static void handle_loc_error(uint32_t line, uint32_t column, const char* format, ...)
+{
+	fprintf(stderr, "Parsing error (line %u, column %u): ", line, column);
+
+	va_list args;
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	fputc('\n', stderr);
+
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
 static void handle_peek_error(const peek_state* peek, const char* format, ...)
 {
 	fprintf(stderr, "Parsing error (line %u, column %u): ", peek->line, peek->column);
@@ -341,7 +356,7 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 			}
 			else
 			{
-				handle_peek_error(&peek, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
+				handle_loc_error(peek.prev_line, peek.prev_column, "Emphasis tags '*' cannot be mixed with strong tags \"**\".");
 			}
 		}
 		else
@@ -403,7 +418,7 @@ static bool check_newline(tokenise_context* ctx, char c)
 		put_char(ctx, 0);
 
 		if (ctx->peek.pc == ' ')
-			handle_peek_error(&ctx->peek, "Trailing spaces are not permitted.");
+			handle_loc_error(ctx->peek.prev_line, ctx->peek.prev_column, "Trailing spaces are not permitted.");
 
 		return true;
 	}
