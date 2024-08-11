@@ -232,7 +232,7 @@ static void create_epub_ncx(const document* doc)
 
 static void create_epub_toc(const document* doc)
 {
-	if (doc->chapter_count > 1)
+	if (doc->chapter_count < 2)
 		return;
 
 	FILE* f = open_file(OUTPUT_DIR "/epub/toc.xhtml", file_mode_write);
