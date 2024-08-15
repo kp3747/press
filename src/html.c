@@ -26,8 +26,11 @@ static void print_html_text_block(html_context* ctx, const char* text)
 			const document_chapter* chapter = &ctx->doc->chapters[ctx->chapter_index];
 			const document_reference* reference = &chapter->references[chapter_ref_count];
 
-			fprintf(ctx->f, "<sup><a id=\"ref-return%d\" href=\"#ref%d\" title=\"", ref_count, ref_count);
-			print_simple_text(ctx->f, reference->text);
+			// TODO: Reinstate title
+			fprintf(ctx->f, "<sup><a id=\"ref-return%d\" href=\"#ref%d\""/* title=\""*/, ref_count, ref_count);
+
+			//print_simple_text(ctx->f, reference->text);
+
 			fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
 		}
 		else
@@ -232,11 +235,21 @@ static void create_html_css(void)
 	);
 	fputs("\n\n", f);
 
-	// Footnote
+	// First footnote paragraph
 	fputs(
 		"p.footnote {\n\t"
-			"margin-top: 1em;\n\t"
+			"margin-top: 1.5em;\n\t"
 			"text-indent: 0;\n\t"
+			"font-size: 0.75em;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Footnote paragraph
+	fputs(
+		"p.footnote_paragraph {\n\t"
+			"text-indent: 1.5em;\n\t"
 			"font-size: 0.75em;\n"
 		"}",
 		f
@@ -516,10 +529,40 @@ static void generate_html(const document* doc)
 				++ctx.chapter_ref_count;
 
 				document_reference* reference = &chapter->references[reference_index];
-				fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
-				fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
-				print_html_text_block(&ctx, reference->text);
-				fprintf(f, "\n\t\t</p>");
+
+				for (uint32_t element_index = 0; element_index < reference->element_count; ++element_index)
+				{
+					document_element* element = &reference->elements[element_index];
+
+					switch (element->type)
+					{
+					case document_element_type_text_block:
+						print_html_text_block(&ctx, element->text);
+						break;
+					case document_element_type_line_break:
+						fputs("<br>", f);
+						break;
+					case document_element_type_paragraph_begin:
+						print_tabs(f, depth);
+						if (element_index == 0)
+						{
+							fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
+							fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
+						}
+						else
+						{
+							fputs("<p class=\"footnote_paragraph\">", f);
+						}
+						break;
+					case document_element_type_paragraph_break_begin:
+						print_tabs(f, depth);
+						fputs("<p class=\"paragraph-break\">", f);
+						break;
+					case document_element_type_paragraph_end:
+						fputs("</p>", f);
+						break;
+					}
+				}
 			}
 		}
 	}

@@ -393,20 +393,21 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 		}
 	}
 
-	if (chapter->reference_count > 0)
-	{
-		for (uint32_t reference_index = 0; reference_index < chapter->reference_count; ++reference_index)
-		{
-			++ctx.ref_count;
-			++ctx.chapter_ref_count;
-
-			document_reference* reference = &chapter->references[reference_index];
-			fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
-			fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
-			print_html_text_block(&ctx, reference->text);
-			fprintf(f, "\n\t\t</p>");
-		}
-	}
+	// TODO
+//	if (chapter->reference_count > 0)
+//	{
+//		for (uint32_t reference_index = 0; reference_index < chapter->reference_count; ++reference_index)
+//		{
+//			++ctx.ref_count;
+//			++ctx.chapter_ref_count;
+//
+//			document_reference* reference = &chapter->references[reference_index];
+//			fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
+//			fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
+//			print_html_text_block(&ctx, reference->text);
+//			fprintf(f, "\n\t\t</p>");
+//		}
+//	}
 
 	fputs(
 		"\n\t</body>\n"

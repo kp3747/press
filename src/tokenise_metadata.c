@@ -8,7 +8,6 @@ typedef enum
 	metadata_entry_type_translators,
 	metadata_entry_type_written,
 	metadata_entry_type_published,
-	metadata_entry_type_paragraph_break,
 	metadata_entry_count
 } metadata_entry_type;
 
@@ -20,8 +19,7 @@ static const char* metadata_strings[] = {
 	"Translator:",
 	"Translators:",
 	"Written:",
-	"Published:",
-	"paragraph-break"
+	"Published:"
 };
 
 static void eat_metadata_spaces(tokenise_context* ctx)
@@ -329,10 +327,6 @@ static void parse_metadata(tokenise_context* ctx, metadata_entry_type entry_type
 //		break;
 //	case metadata_entry_type_published:
 //		break;
-	case metadata_entry_type_paragraph_break:
-		check_metadata_no_value(ctx, entry_type);
-		add_line_token(ctx, line_token_type_paragraph_break);
-		break;
 	}
 }
 

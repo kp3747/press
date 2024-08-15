@@ -7,6 +7,7 @@ typedef struct
 	uint32_t	chapter_count;
 	uint32_t	element_count;
 	uint32_t	reference_count;
+	uint32_t	reference_element_count;
 } validate_context;
 
 static void handle_validate_error(validate_context* ctx, const char* format, ...)
@@ -34,14 +35,14 @@ static line_token* validate_get_next_token(validate_context* ctx)
 	return token;
 }
 
-static line_token* validate_paragraph(validate_context* ctx, line_token* token)
+static line_token* validate_paragraph(validate_context* ctx, line_token* token, uint32_t* element_count)
 {
-	ctx->element_count += 3;
+	*element_count += 3;
 
 	token = validate_get_next_token(ctx);
 	while (token->type == line_token_type_paragraph)
 	{
-		ctx->element_count += 2;
+		*element_count += 2;
 		token = validate_get_next_token(ctx);
 	}
 
@@ -86,12 +87,49 @@ static line_token* validate_heading(validate_context* ctx, line_token* token)
 static line_token* validate_reference(validate_context* ctx, line_token* token)
 {
 	++ctx->reference_count;
+	ctx->reference_element_count += 3;
 
-	line_token* next = validate_get_next_token(ctx);
-	if (next->type != line_token_type_newline)
+	token = validate_get_next_token(ctx);
+	if (token->type != line_token_type_newline)
 		handle_validate_error(ctx, "References must be followed by a blank line.");
 
-	return next;
+	token = validate_get_next_token(ctx);
+	for (;;)
+	{
+		switch (token->type)
+		{
+		case line_token_type_paragraph:
+			token = validate_paragraph(ctx, token, &ctx->reference_element_count);
+			break;
+		case line_token_type_heading_2:
+		case line_token_type_heading_3:
+			handle_validate_error(ctx, "Notes may not contain headings.");
+			break;
+		case line_token_type_block_newline:
+			handle_validate_error(ctx, "Block quotes may not begin with a blank line.");
+			break;
+		case line_token_type_block_citation:
+			handle_validate_error(ctx, "Block quotes may not begin with a citation \"---\".");
+			break;
+		case line_token_type_block_paragraph:
+			handle_validate_error(ctx, "Notes may not currently contain block quotes.");
+			break;
+		case line_token_type_ordered_list_roman:
+		case line_token_type_ordered_list_arabic:
+		case line_token_type_ordered_list_letter:
+		case line_token_type_unordered_list:
+			handle_validate_error(ctx, "Notes may not currently contain lists.");
+			break;
+		// End conditions
+		case line_token_type_heading_1:
+		case line_token_type_reference:
+			return token;
+		default:
+			token = validate_get_next_token(ctx);
+		}
+	}
+
+	return token;
 }
 
 static line_token* validate_preformatted(validate_context* ctx, line_token* token)
@@ -234,9 +272,10 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			out_mem_req->chapter_count = ctx.chapter_count;
 			out_mem_req->element_count = ctx.element_count;
 			out_mem_req->reference_count = ctx.reference_count;
+			out_mem_req->reference_element_count = ctx.reference_element_count;
 			return;
 		case line_token_type_paragraph:
-			token = validate_paragraph(&ctx, token);
+			token = validate_paragraph(&ctx, token, &ctx.element_count);
 			break;
 		case line_token_type_heading_1:
 		case line_token_type_heading_2:
@@ -258,9 +297,6 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 		case line_token_type_block_paragraph:
 			token = validate_blockquote(&ctx, token);
 			break;
-		case line_token_type_paragraph_break:
-			token = validate_paragraph_break(&ctx, token);
-			break;
 		case line_token_type_ordered_list_roman:
 			token = validate_ordered_list(&ctx, token, line_token_type_ordered_list_roman);
 			break;
@@ -272,6 +308,7 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			break;
 		case line_token_type_unordered_list:
 			token = validate_unordered_list(&ctx, token);
+			break;
 		default:
 			token = validate_get_next_token(&ctx);
 		}

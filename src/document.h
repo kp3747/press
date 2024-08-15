@@ -55,7 +55,8 @@ typedef struct
 
 typedef struct
 {
-	const char*	text;
+	document_element*	elements;
+	uint32_t			element_count;
 } document_reference;
 
 typedef struct

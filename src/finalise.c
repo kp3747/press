@@ -4,14 +4,18 @@ typedef struct
 	line_token*			tokens;
 	document_element*	elements;
 	document_reference*	references;
+	document_element*	reference_elements;
 	document_chapter*	current_chapter;
 	uint32_t			current_element;
 	uint32_t			current_reference;
+	uint32_t			current_reference_element;
 	uint32_t			current_token;
 	uint32_t			token_count;
 	uint32_t			chapter_count;
 	uint32_t			element_count;
 	uint32_t			reference_count;
+	uint32_t			reference_element_count;
+	bool				within_reference;
 } finalise_context;
 
 static line_token* finalise_get_next_token(finalise_context* ctx)
@@ -23,12 +27,28 @@ static line_token* finalise_get_next_token(finalise_context* ctx)
 
 static void finalise_add_element(finalise_context* ctx, document_element_type type, const char* text)
 {
-	assert(ctx->current_element < ctx->element_count);
+	document_element* element;
 
-	const uint32_t index = ctx->current_chapter->element_count++;
-	++ctx->current_element;
+	if (ctx->within_reference)
+	{
+		assert(ctx->current_reference_element < ctx->reference_element_count);
 
-	document_element* element = &ctx->current_chapter->elements[index];
+		document_reference* reference = &ctx->references[ctx->current_reference];
+		const uint32_t index = reference->element_count++;
+		++ctx->current_reference_element;
+
+		element = &ctx->references->elements[index];
+	}
+	else
+	{
+		assert(ctx->current_element < ctx->element_count);
+
+		const uint32_t index = ctx->current_chapter->element_count++;
+		++ctx->current_element;
+
+		element = &ctx->current_chapter->elements[index];
+	}
+
 	element->type = type;
 	element->text = text;
 }
@@ -87,12 +107,40 @@ static line_token* finalise_reference(finalise_context* ctx, line_token* token)
 	assert(ctx->current_reference < ctx->reference_count);
 
 	const uint32_t index = ctx->current_chapter->reference_count++;
-	++ctx->current_reference;
 
 	document_reference* reference = &ctx->current_chapter->references[index];
-	reference->text = token->text;
+	reference->elements = &ctx->reference_elements[ctx->current_reference_element];
+	reference->element_count = 0;
 
-	return finalise_get_next_token(ctx);
+	ctx->within_reference = true;
+
+	finalise_add_element(ctx, document_element_type_paragraph_begin, nullptr);
+	finalise_add_element(ctx, document_element_type_text_block, token->text);
+
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_paragraph)
+	{
+		finalise_add_element(ctx, document_element_type_line_break, nullptr);
+		finalise_add_element(ctx, document_element_type_text_block, token->text);
+		token = finalise_get_next_token(ctx);
+	}
+
+	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+
+	for (;;)
+	{
+		if (token->type == line_token_type_paragraph)
+			token = finalise_paragraph(ctx, token);
+		else if (token->type == line_token_type_newline)
+			token = finalise_get_next_token(ctx);
+		else
+			break;
+	}
+
+	ctx->within_reference = false;
+	++ctx->current_reference;
+
+	return token;
 }
 
 static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
@@ -199,11 +247,13 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 	const size_t chapter_size = sizeof(document_chapter) * mem_req->chapter_count;
 	const size_t element_size = sizeof(document_element) * mem_req->element_count;
 	const size_t reference_size = sizeof(document_reference) * mem_req->reference_count;
+	const size_t reference_element_size = sizeof(document_element) * mem_req->reference_element_count;
 
 	const size_t total_size =
 		chapter_size +
 		element_size +
-		reference_size
+		reference_size +
+		reference_element_size
 	;
 	uint8_t* mem = malloc(total_size);
 
@@ -216,15 +266,20 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 	document_reference* references = (document_reference*)mem;
 	mem += reference_size;
 
+	document_element* reference_elements = (document_element*)mem;
+	//mem += reference_element_size;
+
 	finalise_context ctx = {
-		.doc				= out_doc,
-		.tokens				= tokens->lines,
-		.elements			= elements,
-		.references			= references,
-		.token_count		= tokens->count,
-		.chapter_count		= mem_req->chapter_count,
-		.element_count		= mem_req->element_count,
-		.reference_count	= mem_req->reference_count,
+		.doc						= out_doc,
+		.tokens						= tokens->lines,
+		.elements					= elements,
+		.references					= references,
+		.reference_elements			= reference_elements,
+		.token_count				= tokens->count,
+		.chapter_count				= mem_req->chapter_count,
+		.element_count				= mem_req->element_count,
+		.reference_count			= mem_req->reference_count,
+		.reference_element_count	= mem_req->reference_element_count
 	};
 
 	line_token* token = finalise_get_next_token(&ctx);
