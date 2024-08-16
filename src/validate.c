@@ -98,6 +98,9 @@ static line_token* validate_reference(validate_context* ctx, line_token* token)
 	{
 		switch (token->type)
 		{
+		case line_token_type_dinkus:
+			handle_validate_error(ctx, "Notes may not dinkuses \"* * *\".");
+			break;
 		case line_token_type_paragraph:
 			token = validate_paragraph(ctx, token, &ctx->reference_element_count);
 			break;
@@ -248,6 +251,17 @@ static line_token* validate_unordered_list(validate_context* ctx, line_token* to
 	return token;
 }
 
+static line_token* validate_dinkus(validate_context* ctx)
+{
+	++ctx->element_count;
+
+	line_token* token = validate_get_next_token(ctx);
+	if (token->type != line_token_type_newline)
+		handle_validate_error(ctx, "Dinkuses \"* * *\" must be followed by a blank line.");
+
+	return token;
+}
+
 static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 {
 	validate_context ctx = {
@@ -274,6 +288,9 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			out_mem_req->reference_count = ctx.reference_count;
 			out_mem_req->reference_element_count = ctx.reference_element_count;
 			return;
+		case line_token_type_dinkus:
+			token = validate_dinkus(&ctx);
+			break;
 		case line_token_type_paragraph:
 			token = validate_paragraph(&ctx, token, &ctx.element_count);
 			break;

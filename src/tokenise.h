@@ -2,6 +2,7 @@ typedef enum
 {
 	line_token_type_none,
 	line_token_type_eof,
+	line_token_type_dinkus,
 	line_token_type_newline,
 	line_token_type_paragraph,
 	line_token_type_heading_1,

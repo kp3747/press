@@ -332,6 +332,24 @@ static void create_html_css(void)
 		"}",
 		f
 	);
+	fputs("\n\n", f);
+
+	// Turn HR tags into dinkuses ("* * *")
+	fputs(
+		"hr {\n\t"
+			"border: none;\n\t"
+			"word-spacing: 1em;\n\t"
+			"margin-top: 1.5em;\n\t"
+			"margin-bottom: 1.5em;\n"
+		"}\n\n"
+		"hr::before {\n\t"
+			"color: light-dark(#000000, #E0E0E0);\n\t"
+			"content: '* * *';\n\t"
+			"display: block;\n\t"
+			"text-align:center;\n"
+		"}\n\n",
+		f
+	);
 
 	fclose(f);
 }
@@ -432,6 +450,10 @@ static void generate_html(const document* doc)
 
 			switch (element->type)
 			{
+			case document_element_type_dinkus:
+				print_tabs(f, depth);
+				fputs("<hr>", f);
+				break;
 			case document_element_type_heading_1:
 				ctx.chapter_ref_count = 0;
 				ctx.inline_chapter_ref_count = 0;

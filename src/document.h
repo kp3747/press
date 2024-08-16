@@ -1,5 +1,6 @@
 typedef enum
 {
+	document_element_type_dinkus,
 	document_element_type_heading_1,
 	document_element_type_heading_2,
 	document_element_type_heading_3,

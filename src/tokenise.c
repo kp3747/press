@@ -623,6 +623,25 @@ static char tokenise_ordered_list_letter(tokenise_context* ctx, char c, bool blo
 	return tokenise_paragraph(ctx, c, blockquote);
 }
 
+static bool tokenise_check_dinkus(tokenise_context* ctx)
+{
+	peek_state peek;
+	peek_init(ctx, &peek);
+
+	if (peek_char(ctx, &peek) == ' ' && peek_char(ctx, &peek) == '*' && peek_char(ctx, &peek) == ' ' && peek_char(ctx, &peek) == '*')
+	{
+		if (peek_char(ctx, &peek) != '\n')
+			handle_peek_error(&peek, "A dinkus \"* * *\", may not be followed by additional characters.");
+
+		add_line_token(ctx, line_token_type_dinkus);
+		peek_apply(ctx, &peek);
+
+		return true;
+	}
+
+	return false;
+}
+
 static char tokenise_unordered_list(tokenise_context* ctx, char c)
 {
 	peek_state peek;
@@ -630,6 +649,9 @@ static char tokenise_unordered_list(tokenise_context* ctx, char c)
 
 	if (peek_char(ctx, &peek) == ' ')
 	{
+		if (tokenise_check_dinkus(ctx))
+			return get_char(ctx);
+
 		add_line_token(ctx, line_token_type_unordered_list);
 		peek_apply(ctx, &peek);
 

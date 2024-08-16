@@ -242,6 +242,13 @@ static line_token* finalise_unordered_list(finalise_context* ctx, line_token* to
 	return token;
 }
 
+static line_token* finalise_dinkus(finalise_context* ctx)
+{
+	finalise_add_element(ctx, document_element_type_dinkus, nullptr);
+
+	return finalise_get_next_token(ctx);
+}
+
 static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* out_doc)
 {
 	const size_t chapter_size = sizeof(document_chapter) * mem_req->chapter_count;
@@ -290,6 +297,9 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 		case line_token_type_eof:
 			assert(ctx.current_element == ctx.element_count);
 			return;
+		case line_token_type_dinkus:
+			token = finalise_dinkus(&ctx);
+			break;
 		case line_token_type_paragraph:
 			token = finalise_paragraph(&ctx, token);
 			break;
