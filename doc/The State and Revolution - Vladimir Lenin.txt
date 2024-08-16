@@ -1042,7 +1042,7 @@ Kautsky will have to enjoy the pleasant company of the Legiens and Davids, Plekh
 
 We, however, shall break with the opportunists; and the entire class-conscious proletariat will be with us in the fight---not to "shift the balance of forces", but to *overthrow the bourgeoisie*, *to destroy* bourgeois parliamentarism, for a democratic republic after the type of the Commune, or a republic of Soviets of Workers' and Soldiers' Deputies, for the revolutionary dictatorship of the proletariat.
 
-/* "* * *" could specify break? */
+* * *
 
 To the right of Kautsky in international socialism there are trends such as *Socialist Monthly* in Germany (Legien, David, Kolb and many others, including the Scandinavians Stauning and Branting); Jaurès's followers and Vandervelde in France and Belgium; Turati, Treves and other right-wingers of the Italian Party; the Fabians and "Independents" (the Independent Labour Party, which, in fact, has always been dependent on the Liberals) in Britain; and the like. All these gentry, who play a tremendous, very often a predominant role in the parliamentary work and the press of their parties, repudiate outright the dictatorship of the proletariat and pursue a policy of undisguised opportunism. In the eyes of these gentry, the "dictatorship" of the proletariat "contradicts" democracy!! There is really no essential distinction between them and the petty-bourgeois democrats.
 
