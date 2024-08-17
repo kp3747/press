@@ -256,6 +256,17 @@ static void create_html_css(void)
 	);
 	fputs("\n\n", f);
 
+	// Footnote following another footnote
+	fputs(
+		"p.footnote_paragraph + p.footnote {\n\t"
+			"margin-top: 1em;\n"
+		"}\n\n"
+		"p.footnote + p.footnote {\n\t"
+			"margin-top: 1em;\n"
+		"}\n\n",
+		f
+	);
+
 	// Paragraphs after headings are not indented
 	fputs(
 		"h1 + p,\n"

@@ -34,10 +34,9 @@ static void finalise_add_element(finalise_context* ctx, document_element_type ty
 		assert(ctx->current_reference_element < ctx->reference_element_count);
 
 		document_reference* reference = &ctx->references[ctx->current_reference];
-		const uint32_t index = reference->element_count++;
-		++ctx->current_reference_element;
+		reference->element_count++;
 
-		element = &ctx->references->elements[index];
+		element = &ctx->references->elements[ctx->current_reference_element++];
 	}
 	else
 	{
@@ -106,9 +105,7 @@ static line_token* finalise_reference(finalise_context* ctx, line_token* token)
 {
 	assert(ctx->current_reference < ctx->reference_count);
 
-	const uint32_t index = ctx->current_chapter->reference_count++;
-
-	document_reference* reference = &ctx->current_chapter->references[index];
+	document_reference* reference = &ctx->references[ctx->current_reference];
 	reference->elements = &ctx->reference_elements[ctx->current_reference_element];
 	reference->element_count = 0;
 
@@ -133,12 +130,15 @@ static line_token* finalise_reference(finalise_context* ctx, line_token* token)
 			token = finalise_paragraph(ctx, token);
 		else if (token->type == line_token_type_newline)
 			token = finalise_get_next_token(ctx);
+//		else if (token->type == line_token_type_heading_1 || token->type == line_token_type_reference)
+//			break;
 		else
 			break;
 	}
 
 	ctx->within_reference = false;
 	++ctx->current_reference;
+	++ctx->current_chapter->reference_count;
 
 	return token;
 }
