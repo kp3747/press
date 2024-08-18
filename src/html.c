@@ -26,10 +26,24 @@ static void print_html_text_block(html_context* ctx, const char* text)
 			const document_chapter* chapter = &ctx->doc->chapters[ctx->chapter_index];
 			const document_reference* reference = &chapter->references[chapter_ref_count];
 
-			// TODO: Reinstate title
-			fprintf(ctx->f, "<sup><a id=\"ref-return%d\" href=\"#ref%d\""/* title=\""*/, ref_count, ref_count);
+			fprintf(ctx->f, "<sup><a id=\"ref-return%d\" href=\"#ref%d\" title=\"", ref_count, ref_count);
 
-			//print_simple_text(ctx->f, reference->text);
+			int begin_count = 0;
+			for (uint32_t element_index = 0; element_index < reference->element_count; ++element_index)
+			{
+				document_element* element = &reference->elements[element_index];
+
+				if (element->type == document_element_type_text_block)
+				{
+					print_simple_text(ctx->f, element->text);
+				}
+				else if (element->type == document_element_type_paragraph_begin)
+				{
+					++begin_count;
+					if (begin_count > 1)
+						fputs("\n\n", ctx->f);
+				}
+			}
 
 			fprintf(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
 		}
@@ -308,6 +322,15 @@ static void create_html_css(void)
 	// Paragraphs following blockquotes are not indented
 	fputs(
 		"blockquote + p {\n\t"
+			"text-indent: 0;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
+	// Paragraphs following dinkuses are not indented
+	fputs(
+		"hr + p {\n\t"
 			"text-indent: 0;\n"
 		"}",
 		f
