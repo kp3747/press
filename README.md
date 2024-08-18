@@ -116,7 +116,13 @@ c. Pear
 
 ## Quotes
 
-Inline quotes are formatted using double quotation marks, for example `"This is a quote"`. Quotes within quotes are formatted using backticks, for example `"This is a first-level quote, \`and this is a second-level quote\`."`.
+Inline quotes are formatted using double quotation marks, and inner quotes are formatted using backticks.
+
+```
+"This is a quote"
+
+"This is a first-level quote, `and this is a second-level quote`."
+```
 
 ## Block Quotes
 
