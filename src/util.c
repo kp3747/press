@@ -122,6 +122,20 @@ static void print_quote_level_1_end(FILE* f)
 	fputc(0x9D, f);
 }
 
+static void print_quote_level_2_begin(FILE* f)
+{
+	fputc(0xE2, f);
+	fputc(0x80, f);
+	fputc(0x98, f);
+}
+
+static void print_quote_level_2_end(FILE* f)
+{
+	fputc(0xE2, f);
+	fputc(0x80, f);
+	fputc(0x99, f);
+}
+
 static void print_char(FILE* f, char c)
 {
 	if (c == text_token_type_en_dash)
@@ -134,6 +148,10 @@ static void print_char(FILE* f, char c)
 		print_quote_level_1_begin(f);
 	else if (c == text_token_type_quote_level_1_end)
 		print_quote_level_1_end(f);
+	else if (c == text_token_type_quote_level_2_begin)
+		print_quote_level_2_begin(f);
+	else if (c == text_token_type_quote_level_2_end)
+		print_quote_level_2_end(f);
 	else if (c == text_token_type_left_square_bracket)
 		fputc('[', f);
 	else if (c == text_token_type_right_square_bracket)

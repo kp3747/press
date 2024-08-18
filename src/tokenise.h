@@ -39,8 +39,10 @@ typedef enum
 	text_token_type_newline					= 10,
 	text_token_type_quote_level_1_begin		= 11,
 	text_token_type_quote_level_1_end		= 12,
-	text_token_type_left_square_bracket		= 13,
-	text_token_type_right_square_bracket	= 14
+	text_token_type_quote_level_2_begin		= 13,
+	text_token_type_quote_level_2_end		= 14,
+	text_token_type_left_square_bracket		= 15,
+	text_token_type_right_square_bracket	= 16
 } text_token_type;
 
 typedef struct

@@ -458,6 +458,27 @@ static char tokenise_text(tokenise_context* ctx, char c)
 				put_text_token(ctx, text_token_type_quote_level_1_end);
 				quote_level = 0;
 			}
+			else
+			{
+				handle_tokenise_error(ctx, "Mixed quote levels.");
+			}
+		}
+		else if (c == '`')
+		{
+			if (quote_level == 1)
+			{
+				put_text_token(ctx, text_token_type_quote_level_2_begin);
+				quote_level = 2;
+			}
+			else if (quote_level == 2)
+			{
+				put_text_token(ctx, text_token_type_quote_level_2_end);
+				quote_level = 1;
+			}
+			else
+			{
+				handle_tokenise_error(ctx, "Mixed quote levels.");
+			}
 		}
 		else if (c == '[')
 		{
