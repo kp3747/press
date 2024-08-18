@@ -81,6 +81,11 @@ This is a paragraph.
 
 This paragraph contains a
 break.
+
+These paragraphs
+
+
+are separated by a paragraph break.
 ```
 
 ## Lists
@@ -108,6 +113,10 @@ c. Pear
 * Orange
 * Pear
 ```
+
+## Quotes
+
+Inline quotes are formatted using double quotation marks, for example `"This is a quote"`. Quotes within quotes are formatted using backticks, for example `"This is a first-level quote, \`and this is a second-level quote\`."`.
 
 ## Block Quotes
 
@@ -140,14 +149,6 @@ This is an en dash "--".
 This is an em dash "---".
 ```
 
-## Escape Characters
-
-Some characters are reserved as formatting characters, such as square brackets "[]" used for references and metadata. Escape characters can be used if they actually need to be printed. They all start with the backslash "\" because it has no use in publishing.
-
-```
-\[This text is surrounded by square brackets\]
-```
-
 ## Comments
 
 Comments allow text to be inserted in the source text file which is removed from generated documents. Example uses of comments are to temporarily remove text during editing, or to share comments between author and editor. There are two supported types of comments.
@@ -174,7 +175,7 @@ This paragraph[1] contains a reference.
 
 ## Metadata
 
-Metadata allows the author to provide more information to the press tool. Metadata attributes are placed with square brackets and must be placed at the start of a line. Available attributes are:
+Metadata allows the author to provide more information to the press tool. Metadata attributes are placed with curly braces and must be placed at the start of a line. Available attributes are:
 
 * Type - "Book" or "Article".
 * Title - Title of the article or book. Articles without this will default to the top-level heading. Articles and books can fall back to the source text file name.
@@ -184,8 +185,8 @@ Metadata allows the author to provide more information to the press tool. Metada
 * Translators - Each translator must be separated by a comma and space ", ".
 
 ```
-[Type: Book]
-[Title: Manifesto of the Communist Party]
-[Authors: Karl Marx, Friedrich Engels]
-[Translator: Samuel Moore]
+{Type: Book}
+{Title: Manifesto of the Communist Party}
+{Authors: Karl Marx, Friedrich Engels}
+{Translator: Samuel Moore}
 ```
