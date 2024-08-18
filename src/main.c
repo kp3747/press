@@ -86,7 +86,7 @@ int main(int argc, const char** argv)
 	bool epub = false;
 	const char* filepath = nullptr;
 
-	fputs("ARCP Press Tool v0.9.2\n", stdout);
+	fputs("ARCP Press Tool v0.9.3\n", stdout);
 
 	if (argc <= 1)
 		print_usage();
