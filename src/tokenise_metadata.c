@@ -38,7 +38,7 @@ static void eat_metadata_spaces(tokenise_context* ctx)
 		}
 		else if (c == '\n')
 		{
-			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"[...]\".");
+			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"{...}\".");
 		}
 		else
 		{
@@ -53,8 +53,8 @@ static void eat_metadata_spaces(tokenise_context* ctx)
 static void check_metadata_no_value(tokenise_context* ctx, metadata_entry_type entry_type)
 {
 	const char c = get_char(ctx);
-	if (c != ']')
-		handle_tokenise_error(ctx, "Metadata attribute \"[%s]\" may not contain extra characters.", metadata_strings[entry_type]);
+	if (c != '}')
+		handle_tokenise_error(ctx, "Metadata attribute \"{%s}\" may not contain extra characters.", metadata_strings[entry_type]);
 }
 
 static const char* parse_metadata_text(tokenise_context* ctx)
@@ -72,13 +72,13 @@ static const char* parse_metadata_text(tokenise_context* ctx)
 		const char c = peek_char(ctx, &peek);
 		if (c == '\n')
 		{
-			handle_peek_error(&peek, "New lines are not permitted within metadata tags \"[...]\".");
+			handle_peek_error(&peek, "New lines are not permitted within metadata tags \"{...}\".");
 		}
 		else if (c == '\t')
 		{
 			handle_peek_error(&peek, "Tabs are not permitted within metadata values.");
 		}
-		else if (c == ']')
+		else if (c == '}')
 		{
 			if (peek.pc == ' ')
 				handle_peek_error(&peek, "Trailing spaces are not permitted.");
@@ -100,7 +100,7 @@ static const char* parse_metadata_text(tokenise_context* ctx)
 	for (uint32_t i = 0; i < len; ++i)
 		text[i] = get_char(ctx);
 
-	// Eat final ']' char
+	// Eat final '}' char
 	get_char(ctx);
 
 	return text;
@@ -134,13 +134,13 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 		}
 		else if (c == '\n')
 		{
-			handle_peek_error(&peek, "New lines are not permitted within metadata tags \"[...]\".");
+			handle_peek_error(&peek, "New lines are not permitted within metadata tags \"{...}\".");
 		}
 		else if (c == '\t')
 		{
 			handle_peek_error(&peek, "Tabs are not permitted within metadata values.");
 		}
-		else if (c == ']')
+		else if (c == '}')
 		{
 			if (peek.pc == ' ')
 				handle_loc_error(peek.prev_line, peek.prev_column, "Trailing spaces are not permitted.");
@@ -178,7 +178,7 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 			// Skip trailing space after comma
 			c = get_char(ctx);
 		}
-		else if (c == ']')
+		else if (c == '}')
 		{
 			text[char_index++] = 0;
 			break;
@@ -213,7 +213,7 @@ static int parse_metadata_enum(tokenise_context* ctx, const char* name, const ch
 
 			if (*str == 0)
 			{
-				if (peeked_char == ']')
+				if (peeked_char == '}')
 				{
 					peek_apply(ctx, &peek);
 					return i;
@@ -332,10 +332,13 @@ static void parse_metadata(tokenise_context* ctx, metadata_entry_type entry_type
 
 static char tokenise_metadata(tokenise_context* ctx, char c)
 {
+	// Eat initial '{' char
+	c = get_char(ctx);
+
 	if (c == ' ')
-		handle_tokenise_error(ctx, "Metadata tags \"[...]\" cannot begin with a space.");
+		handle_tokenise_error(ctx, "Metadata tags \"{...}\" cannot begin with a space.");
 	else if (c == '\t')
-		handle_tokenise_error(ctx, "Metadata tags \"[...]\" cannot begin with a tab.");
+		handle_tokenise_error(ctx, "Metadata tags \"{...}\" cannot begin with a tab.");
 
 	// Compare text against all metadata strings to determine type
 	for (int i = 0; i < metadata_entry_count; ++i)
@@ -364,7 +367,7 @@ static char tokenise_metadata(tokenise_context* ctx, char c)
 					// Make sure metadata is followed by a new line
 					c = get_char(ctx);
 					if (c != '\n')
-						handle_tokenise_error(ctx, "Metadata tags \"[...]\" must be followed by a new line.");
+						handle_tokenise_error(ctx, "Metadata tags \"{...}\" must be followed by a new line.");
 
 					return get_char(ctx);
 				}

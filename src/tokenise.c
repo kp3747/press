@@ -704,7 +704,7 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 	}
 	else if (c == '0')
 	{
-		handle_tokenise_error(ctx, "References must begin from 1, and metadata must not begin with a number.");
+		handle_tokenise_error(ctx, "References must begin from 1.");
 	}
 	else if (c >= '1' && c <= '9')
 	{
@@ -722,7 +722,7 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 	}
 	else
 	{
-		c = tokenise_metadata(ctx, c);
+		handle_tokenise_error(ctx, "References must contain arabic numerals.");
 	}
 
 	return c;
@@ -781,6 +781,8 @@ static void tokenise(char* data, line_tokens* out_tokens, document_metadata* met
 			break;
 		else if (c == '/')
 			c = tokenise_comment(&ctx, c);
+		else if (c == '{')
+			c = tokenise_metadata(&ctx, c);
 		else if (c == '[')
 			c = tokenise_bracket(&ctx, c);
 		else if (c == '\t')

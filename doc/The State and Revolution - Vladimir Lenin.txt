@@ -7,9 +7,9 @@
 	* http://burawoy.berkeley.edu/Reader.101/Lenin.pdf
 */
 
-[Type:		Book]
-[Title:		The State and Revolution]
-[Author:	Vladimir Lenin]
+{Type:		Book}
+{Title:		The State and Revolution}
+{Author:	Vladimir Lenin}
 
 # Preface to the First Edition[1]
 
