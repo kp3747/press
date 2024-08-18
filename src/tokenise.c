@@ -462,13 +462,22 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		else if (c == '[')
 		{
 			c = get_char(ctx);
-			const uint32_t index = arabic_to_int_new(ctx, &ctx->peek, c, ']');
-			++ctx->ref_count;
 
-			if (index != ctx->ref_count)
-				handle_tokenise_error(ctx, "Expected reference number %d.", ctx->ref_count);
+			if (c >= '0' && c <= '9')
+			{
+				const uint32_t index = arabic_to_int_new(ctx, &ctx->peek, c, ']');
+				++ctx->ref_count;
 
-			put_text_token(ctx, text_token_type_reference);
+				if (index != ctx->ref_count)
+					handle_tokenise_error(ctx, "Expected reference number %d.", ctx->ref_count);
+
+				put_text_token(ctx, text_token_type_reference);
+			}
+			else
+			{
+				put_char(ctx, '[');
+				continue;
+			}
 		}
 		else if (check_space(ctx, c))
 		{
