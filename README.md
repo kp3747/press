@@ -116,7 +116,7 @@ c. Pear
 
 ## Quotes
 
-enline quotes are formatted using double quotation marks, and inner quotes are formatted using backticks '`' (the key under the escape key on US and UK keyboards.
+Inline quotes are formatted using double quotation marks, and inner quotes are formatted using backticks (the key under the escape key on US and UK keyboards.
 
 ```
 "This is a quote"
