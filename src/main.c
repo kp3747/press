@@ -1,33 +1,3 @@
-static char* load_file(const char* filepath)
-{
-	FILE* f = open_file(filepath, file_mode_read);
-	const uint32_t size = get_file_size(f);
-
-	/*
-		Allocate enough memory plus two bytes:
-		1. Potential extra new line character before null terminator to make parsing simpler.
-		2. Null terminator.
-	*/
-	char* data = malloc(size + 2);
-
-	// Put data one byte past the beginning of the buffer to allow space for initial control code
-	fread(data, 1, size, f);
-	fclose(f);
-
-	// Check if final new line character needs to be added, then null terminate
-	if (data[size - 1] == '\n')
-	{
-		data[size] = 0;
-	}
-	else
-	{
-		data[size] = '\n';
-		data[size + 1] = 0;
-	}
-
-	return data;
-}
-
 static void print_usage(void)
 {
 	fprintf(stderr,
@@ -42,41 +12,6 @@ static void print_usage(void)
 	);
 
 	exit(EXIT_FAILURE);
-}
-
-static const char* copy_filename(const char* filepath)
-{
-	assert(filepath);
-	assert(*filepath);
-
-	const char* last_dir = filepath;
-	const char* last_dot = nullptr;
-
-	for (;;)
-	{
-		const char c = *filepath;
-		if (c == '\\' || c == '/')
-			last_dir = filepath + 1;
-		else if (c == '.')
-			last_dot = filepath;
-		else if (c == 0)
-			break;
-
-		++filepath;
-	}
-
-	if (!last_dot)
-		last_dot = filepath;
-
-	const int64_t len = last_dot - last_dir;
-	assert(len);
-
-	char* filename = malloc(len + 1);
-	for (int64_t i = 0; i < len; ++i)
-		filename[i] = last_dir[i];
-	filename[len] = 0;
-
-	return filename;
 }
 
 int main(int argc, const char** argv)

@@ -6,13 +6,13 @@
 	* https://standardebooks.org/ebooks/karl-marx_friedrich-engels/the-communist-manifesto/samuel-moore/text/single-page#preface
 */
 
-[Type:			Book]
-[Title:			Manifesto of the Communist Party]
-[Authors:		Karl Marx, Friedrich Engels]
-[Translator:	Samuel Moore]
+{Type:			Book}
+{Title:			Manifesto of the Communist Party}
+{Authors:		Karl Marx, Friedrich Engels}
+{Translator:	Samuel Moore}
 /*
-[Written:		1847]
-[Published:		1848-02-21]
+{Written:		1847}
+{Published:		1848-02-21}
 */
 
 # Preface to the English Edition of 1888

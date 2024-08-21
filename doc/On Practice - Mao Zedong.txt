@@ -4,10 +4,10 @@
 	* https://www.marxists.org/reference/archive/mao/selected-works/volume-1/mswv1_16.htm
 */
 
-[Title:		On Practice]
-[Author:	Mao Zedong]
+{Title:		On Practice}
+{Author:	Mao Zedong}
 /*
-[Written:	1937-07]
+{Written:	1937-07}
 */
 
 # On Practice by Mao Zedong

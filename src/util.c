@@ -6,6 +6,36 @@
 	report an error if a path length exceeds that. In fact, that sounds like a good idea.
 */
 
+static char* load_file(const char* filepath)
+{
+	FILE* f = open_file(filepath, file_mode_read);
+	const uint32_t size = get_file_size(f);
+
+	/*
+		Allocate enough memory plus two bytes:
+		1. Potential extra new line character before null terminator to make parsing simpler.
+		2. Null terminator.
+	*/
+	char* data = malloc(size + 2);
+
+	// Put data one byte past the beginning of the buffer to allow space for initial control code
+	fread(data, 1, size, f);
+	fclose(f);
+
+	// Check if final new line character needs to be added, then null terminate
+	if (data[size - 1] == '\n')
+	{
+		data[size] = 0;
+	}
+	else
+	{
+		data[size] = '\n';
+		data[size + 1] = 0;
+	}
+
+	return data;
+}
+
 static void create_dir(const char* dir)
 {
 	char buffer[256];
@@ -51,19 +81,39 @@ static uint32_t get_file_size(FILE* f)
 	return size;
 }
 
-static void handle_error(const char* format, ...)
+static const char* copy_filename(const char* filepath)
 {
-	fputs("Error: ", stderr);
+	assert(filepath);
+	assert(*filepath);
 
-	va_list args;
-	va_start(args, format);
-	vfprintf(stderr, format, args);
-	va_end(args);
+	const char* last_dir = filepath;
+	const char* last_dot = nullptr;
 
-	fputc('\n', stderr);
+	for (;;)
+	{
+		const char c = *filepath;
+		if (c == '\\' || c == '/')
+			last_dir = filepath + 1;
+		else if (c == '.')
+			last_dot = filepath;
+		else if (c == 0)
+			break;
 
-	assert(false);
-	exit(EXIT_FAILURE);
+		++filepath;
+	}
+
+	if (!last_dot)
+		last_dot = filepath;
+
+	const int64_t len = last_dot - last_dir;
+	assert(len);
+
+	char* filename = malloc(len + 1);
+	for (int64_t i = 0; i < len; ++i)
+		filename[i] = last_dir[i];
+	filename[len] = 0;
+
+	return filename;
 }
 
 static const char* generate_path(const char* format, ...)
@@ -164,4 +214,61 @@ static void print_simple_text(FILE* f, const char* text)
 {
 	while (*text)
 		print_char(f, *text++);
+}
+
+static void handle_error(const char* format, ...)
+{
+	fputs("Error: ", stderr);
+
+	va_list args;
+	va_start(args, format);
+	vfprintf(stderr, format, args);
+	va_end(args);
+
+	fputc('\n', stderr);
+
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
+static char				error_buffer[4096];
+static uint32_t			error_buffer_pos;
+static error_callback	error_handler;
+
+static void install_error_handler(error_callback handler)
+{
+	error_handler = handler;
+}
+
+static void exit_failure(void)
+{
+	if (error_handler)
+		error_handler(error_buffer);
+
+	fputs(error_buffer, stderr);
+
+	assert(false);
+	exit(EXIT_FAILURE);
+}
+
+static void print_error(const char* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	print_error_vargs(format, args);
+	va_end(args);
+}
+
+static void print_error_char(char c)
+{
+	if (error_buffer_pos < sizeof(error_buffer) - 1)
+		error_buffer[error_buffer_pos++] = c;
+}
+
+static void print_error_vargs(const char* format, va_list args)
+{
+	const int len = vsnprintf(error_buffer + error_buffer_pos, sizeof(error_buffer) - error_buffer_pos, format, args);
+	error_buffer_pos += len;
+	if (error_buffer_pos == sizeof(error_buffer))
+		error_buffer_pos = sizeof(error_buffer);
 }

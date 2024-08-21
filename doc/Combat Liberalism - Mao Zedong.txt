@@ -4,14 +4,14 @@
 	* https://collections.mun.ca/digital/collection/radical/id/58428
 */
 
-[Title:		Combat Liberalism]
-[Author:	Mao Zedong]
+{Title:		Combat Liberalism}
+{Author:	Mao Zedong}
 /*
-[Written:	1937-08-07]
-[Published:	1954]
+{Written:	1937-08-07}
+{Published:	1954}
 */
 
-# Combat Liberalism
+# Combat Liberalism by Mao Zedong
 
 We stand for active ideological struggle because it is the weapon for ensuring unity within the Party and the revolutionary organizations in the interest of our fight. Every Communist and revolutionary should take up this weapon.
 

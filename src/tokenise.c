@@ -7,47 +7,44 @@ typedef enum
 
 static void handle_loc_error(uint32_t line, uint32_t column, const char* format, ...)
 {
-	fprintf(stderr, "Parsing error (line %u, column %u): ", line, column);
+	print_error("Parsing error (line %u, column %u): ", line, column);
 
 	va_list args;
 	va_start(args, format);
-	vfprintf(stderr, format, args);
+	print_error_vargs(format, args);
 	va_end(args);
 
-	fputc('\n', stderr);
+	print_error_char('\n');
 
-	assert(false);
-	exit(EXIT_FAILURE);
+	exit_failure();
 }
 
 static void handle_peek_error(const peek_state* peek, const char* format, ...)
 {
-	fprintf(stderr, "Parsing error (line %u, column %u): ", peek->line, peek->column);
+	print_error("Parsing error (line %u, column %u): ", peek->line, peek->column);
 
 	va_list args;
 	va_start(args, format);
-	vfprintf(stderr, format, args);
+	print_error_vargs(format, args);
 	va_end(args);
 
-	fputc('\n', stderr);
+	print_error_char('\n');
 
-	assert(false);
-	exit(EXIT_FAILURE);
+	exit_failure();
 }
 
 static void handle_tokenise_error(const tokenise_context* ctx, const char* format, ...)
 {
-	fprintf(stderr, "Parsing error (line %u, column %u): ", ctx->peek.line, ctx->peek.column);
+	print_error("Parsing error (line %u, column %u): ", ctx->peek.line, ctx->peek.column);
 
 	va_list args;
 	va_start(args, format);
-	vfprintf(stderr, format, args);
+	print_error_vargs(format, args);
 	va_end(args);
 
-	fputc('\n', stderr);
+	print_error_char('\n');
 
-	assert(false);
-	exit(EXIT_FAILURE);
+	exit_failure();
 }
 
 static line_token* add_line_token(tokenise_context* ctx, line_token_type type)

@@ -98,6 +98,8 @@ static line_token* validate_reference(validate_context* ctx, line_token* token)
 	{
 		switch (token->type)
 		{
+		case line_token_type_eof:
+			return token;
 		case line_token_type_dinkus:
 			handle_validate_error(ctx, "Notes may not dinkuses \"* * *\".");
 			break;
