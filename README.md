@@ -34,6 +34,7 @@ Parameters:
 * --all - Generates all formats.
 * --html - Generates an HTML webpage and CSS stylesheet.
 * --epub - Generates an ePub eBook.
+* --odt - Generate ODT word processor document (experimental).
 
 # Format
 
