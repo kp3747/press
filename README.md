@@ -30,7 +30,8 @@ The order of arguments does not matter, but the source file path is mandatory. A
 
 Parameters:
 
-* Source file path. If there are spaces in the path you should surround it in "quote characters".
+* Source file path. If there are spaces in the path you should surround it in "double quote characters".
+* --all - Generates all formats.
 * --html - Generates an HTML webpage and CSS stylesheet.
 * --epub - Generates an ePub eBook.
 
