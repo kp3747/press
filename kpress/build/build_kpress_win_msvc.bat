@@ -66,10 +66,10 @@ rem Invoke compiler
 /Oi /GS- /DYNAMICBASE:NO /fp:fast /Gv /diagnostics:caret ^
 /nologo ^
 /D _CRT_SECURE_NO_WARNINGS ^
-/Fd"build\win_%config%\zpress.pdb" ^
+/Fd"build\win_%config%\kpress.pdb" ^
 /Fo"build\win_%config%\obj\\" ^
-/Fe"build\win_%config%\zpress.exe" ^
-/Fm"build\win_%config%\zpress.map" ^
+/Fe"build\win_%config%\kpress.exe" ^
+/Fm"build\win_%config%\kpress.map" ^
 /I %vc_include% /I "%sdk_include%\um" /I "%sdk_include%\ucrt" /I "%sdk_include%\shared" ^
 "src\kpress_unity.c" /link /OPT:ref /subsystem:windows /incremental:no libucrt.lib Comdlg32.lib User32.lib /LIBPATH:%vc_lib% /LIBPATH:%sdk_lib% /LIBPATH:%ucrt_lib%
 
