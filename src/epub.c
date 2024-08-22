@@ -289,7 +289,7 @@ static void create_epub_toc(const document* doc)
 		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
 		"\t<head>\n"
 		"\t\t<title>Contents</title>\n"
-		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
+		"\t\t<link href=\"style.css\" rel=\"stylesheet\" />\n"
 		"\t</head>\n"
 		"\t<body>\n"
 		"\t\t<h1>Contents</h1>\n"
@@ -333,7 +333,7 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n"
 		"\t<head>\n"
 		"\t\t<title>%s</title>\n"
-		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n"
+		"\t\t<link href=\"style.css\" rel=\"stylesheet\" />\n"
 		"\t</head>\n"
 		"\t<body>",
 		chapter->elements[0].text
@@ -495,6 +495,7 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 
 static void generate_epub(const document* doc)
 {
+	create_dir(OUTPUT_DIR "\\epub");
 	create_dir(OUTPUT_DIR "\\epub\\META-INF");
 
 	create_epub_mimetype();
