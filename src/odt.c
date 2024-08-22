@@ -369,6 +369,7 @@ static void generate_odt_content(const document* doc)
 
 static void generate_odt(const document* doc)
 {
+	create_dir(OUTPUT_DIR "\\odt");
 	create_dir(OUTPUT_DIR "\\odt\\META-INF");
 
 	create_odt_mimetype();

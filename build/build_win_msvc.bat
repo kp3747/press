@@ -71,7 +71,7 @@ rem Invoke compiler
 /Fe"build\win_%config%\press.exe" ^
 /Fm"build\win_%config%\press.map" ^
 /I %vc_include% /I "%sdk_include%\um" /I "%sdk_include%\ucrt" /I "%sdk_include%\shared" ^
-"src\unity.c" /link /OPT:ref /subsystem:console /incremental:no libucrt.lib /LIBPATH:%vc_lib% /LIBPATH:%sdk_lib% /LIBPATH:%ucrt_lib%
+"src\unity.c" /link /OPT:ref /subsystem:console /incremental:no libucrt.lib Comdlg32.lib Shell32.lib User32.lib /LIBPATH:%vc_lib% /LIBPATH:%sdk_lib% /LIBPATH:%ucrt_lib%
 
 rem Switch back to calling directory
 popd

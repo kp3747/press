@@ -38,22 +38,29 @@ static char* load_file(const char* filepath)
 
 static void create_dir(const char* dir)
 {
-	char buffer[256];
-	const int len = snprintf(buffer, sizeof(buffer), "mkdir %s >nul 2>nul", dir);
-	assert(len < sizeof(buffer));
-
-	const int ret = system(buffer);
-	if (ret)
-		handle_error("Unable to create directory \"%s/\". Do you have a previously generated file open?", dir);
+	const BOOL result = CreateDirectoryA(dir, nullptr);
+	if (!result)
+		handle_error("Unable to create directory \"%s\". Do you have a previously generated file open?", dir);
 }
 
 static void delete_dir(const char* dir)
 {
-	char buffer[256];
-	const int len = snprintf(buffer, sizeof(buffer), "rmdir %s /s /q >nul 2>nul", dir);
-	assert(len < sizeof(buffer));
+	const int64_t len = strlen(dir);
+	char* file_path = malloc(len + 2);
+	memcpy(file_path, dir, len);
 
-	system(buffer);
+	// The API requires path to end with two null terminators
+	file_path[len] = file_path[len + 1] = 0;
+
+	SHFILEOPSTRUCT op = {
+		.wFunc	= FO_DELETE,
+		.pFrom	= file_path,
+		.fFlags	= FOF_NO_UI
+	};
+
+	const int result = SHFileOperationA(&op);
+	if (result)
+		handle_error("Unable to delete temporary directory \"%s\". Do you have a previously generated file open?", dir);
 }
 
 static FILE* open_file(const char* path, file_mode mode)
@@ -242,12 +249,15 @@ static void install_error_handler(error_callback handler)
 
 static void exit_failure(void)
 {
+	fputs(error_buffer, stderr);
+
+	// Break in debugger first
+	assert(false);
+
+	// Show error message box in GUI mode
 	if (error_handler)
 		error_handler(error_buffer);
 
-	fputs(error_buffer, stderr);
-
-	assert(false);
 	exit(EXIT_FAILURE);
 }
 
