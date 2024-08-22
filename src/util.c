@@ -193,26 +193,44 @@ static void print_quote_level_2_end(FILE* f)
 
 static void print_char(FILE* f, char c)
 {
-	if (c == text_token_type_en_dash)
+	switch (c)
+	{
+	case text_token_type_en_dash:
 		print_en_dash(f);
-	else if (c == text_token_type_em_dash)
+		break;
+	case text_token_type_em_dash:
 		print_em_dash(f);
-	else if (c == '\'')
+		break;
+	case '\'':
 		print_apostrophe(f);
-	else if (c == text_token_type_quote_level_1_begin)
+		break;
+	case text_token_type_quote_level_1_begin:
 		print_quote_level_1_begin(f);
-	else if (c == text_token_type_quote_level_1_end)
+		break;
+	case text_token_type_quote_level_1_end:
 		print_quote_level_1_end(f);
-	else if (c == text_token_type_quote_level_2_begin)
+		break;
+	case text_token_type_quote_level_2_begin:
 		print_quote_level_2_begin(f);
-	else if (c == text_token_type_quote_level_2_end)
+		break;
+	case text_token_type_quote_level_2_end:
 		print_quote_level_2_end(f);
-	else if (c == text_token_type_left_square_bracket)
+		break;
+	case text_token_type_left_square_bracket:
 		fputc('[', f);
-	else if (c == text_token_type_right_square_bracket)
+		break;
+	case text_token_type_right_square_bracket:
 		fputc(']', f);
-	else
+		break;
+	case text_token_type_reference:
+	case text_token_type_strong_end:
+	case text_token_type_emphasis_end:
+	case text_token_type_strong_begin:
+	case text_token_type_emphasis_begin:
+		break;
+	default:
 		fputc(c, f);
+	}
 }
 
 static void print_simple_text(FILE* f, const char* text)
