@@ -1,7 +1,18 @@
 @echo off
 
 rem Gather arguments
-set config=%1
+
+rem Default to release builds and validate config name
+if "%~1"=="" (
+	set %config=release
+) else if "%~1"=="debug" (
+	set config=debug
+) else if "%~1"=="release" (
+	set config=release
+) else (
+	@echo Unsupported config
+	exit /b
+)
 
 setlocal EnableDelayedExpansion
 
