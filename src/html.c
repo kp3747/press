@@ -109,18 +109,18 @@ static const char* generate_url_path(const char* title, const char* ext)
 	return buffer;
 }
 
-static void create_html_css(void)
+static void output_css(html_context* ctx)
 {
-	FILE* f = open_file(OUTPUT_DIR "/style.css", file_mode_write);
+	//FILE* f = open_file(OUTPUT_DIR "/style.css", file_mode_write);
 
 	// This adds support for light and dark modes based on browser settings
 	fputs(
 		":root {\n\t"
 			"color-scheme: light dark;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Default universal settings
 	fputs(
@@ -140,9 +140,9 @@ static void create_html_css(void)
 			"padding-right: 1em;\n\t"
 			"padding-bottom: 1em;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Chapter headings are centred
 	fputs(
@@ -150,9 +150,9 @@ static void create_html_css(void)
 			"text-align: center;\n"//\t"
 			//"page-break-before: always;\n" // Ensures chapters start on a new page when printed
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Title heading
 	fputs(
@@ -162,9 +162,9 @@ static void create_html_css(void)
 			"padding-bottom: 128px;\n\t"
 			"page-break-before: avoid;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Superscript
 	fputs(
@@ -172,27 +172,27 @@ static void create_html_css(void)
 			"line-height: 0;\n\t"	// Prevent references from increasing line height
 			"font-size: 0.75em;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Remove underlines from hyperlinks
 	fputs(
 		"a {\n\t"
 			"text-decoration: none;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Add underline when hovering over link
 	fputs(
 		"a:hover {\n\t"
 			"text-decoration: underline;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Links should not stand out when printing
 	fputs(
@@ -201,18 +201,18 @@ static void create_html_css(void)
 				"color: black;\n\t"
 			"}\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Avoid new lines after a heading when printing
 	fputs(
 		"h1, h2, h3 {\n\t"
 			"page-break-after: avoid;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Paragraphs which don't follow a heading are not indented
 	fputs(
@@ -223,9 +223,9 @@ static void create_html_css(void)
 			"hyphens: auto;\n\t"
 			"margin-bottom: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Paragraph with previous gap
 	fputs(
@@ -233,9 +233,9 @@ static void create_html_css(void)
 			"margin-top: 1em;\n\t"
 			"text-indent: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Authors
 	fputs(
@@ -245,9 +245,9 @@ static void create_html_css(void)
 			"padding-bottom: 128px;\n\t"
 			"text-indent: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// First footnote paragraph
 	fputs(
@@ -256,9 +256,9 @@ static void create_html_css(void)
 			"text-indent: 0;\n\t"
 			"font-size: 0.75em;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Footnote paragraph
 	fputs(
@@ -266,9 +266,9 @@ static void create_html_css(void)
 			"text-indent: 1.5em;\n\t"
 			"font-size: 0.75em;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Footnote following another footnote
 	fputs(
@@ -278,7 +278,7 @@ static void create_html_css(void)
 		"p.footnote + p.footnote {\n\t"
 			"margin-top: 1em;\n"
 		"}\n\n",
-		f
+		ctx->f
 	);
 
 	// Paragraphs after headings are not indented
@@ -288,54 +288,54 @@ static void create_html_css(void)
 		"h3 + p {\n\t"
 			"text-indent: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Blockquote indentation
 	fputs(
 		"blockquote {\n\t"
 			"margin-left: 1.5em;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// First paragraphs within a blockquote are not indented
 	fputs(
 		"blockquote p {\n\t"
 			"text-indent: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Paragraphs following first blockquote paragraph are indented
 	fputs(
 		"blockquote p + p {\n\t"
 			"text-indent: 1.5em;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Paragraphs following blockquotes are not indented
 	fputs(
 		"blockquote + p {\n\t"
 			"text-indent: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Paragraphs following dinkuses are not indented
 	fputs(
 		"hr + p {\n\t"
 			"text-indent: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Lists
 	fputs(
@@ -345,9 +345,9 @@ static void create_html_css(void)
 			"margin-left: 1.5em;\n\t"
 			"padding-left: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Paragraphs following lists are not be indented
 	fputs(
@@ -355,18 +355,18 @@ static void create_html_css(void)
 		"ul + p {\n\t"
 			"text-indent: 0;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Chapter list should be left-aligned
 	fputs(
 		"ul.chapters {\n\t"
 			"text-align: left;\n"
 		"}",
-		f
+		ctx->f
 	);
-	fputs("\n\n", f);
+	fputs("\n\n", ctx->f);
 
 	// Turn HR tags into dinkuses ("* * *")
 	fputs(
@@ -381,16 +381,16 @@ static void create_html_css(void)
 			"content: '* * *';\n\t"
 			"display: block;\n\t"
 			"text-align:center;\n"
-		"}\n\n",
-		f
+		"}\n",
+		ctx->f
 	);
 
-	fclose(f);
+	//fclose(f);
 }
 
 static void generate_html(const document* doc)
 {
-	create_html_css();
+	//create_html_css();
 
 	const char* filepath = generate_url_path(doc->metadata.title, "html");
 	FILE* f = open_file(filepath, file_mode_write);
@@ -405,15 +405,17 @@ static void generate_html(const document* doc)
 		"<html lang=\"en-GB\">\n"
 		"\t<head>\n"
 		"\t\t<meta charset=\"UTF-8\">\n"
-		"\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
-		"\t\t<link href=\"style.css\" rel=\"stylesheet\">\n",
+		"\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n",
 		f
 	);
 
 	if (doc->metadata.title)
 		fprintf(f, "\t\t<title>%s</title>\n", doc->metadata.title);
 
+	fputs("\t\t<style>\n", f);
+	output_css(&ctx);
 	fputs(
+		"\t\t</style>\n"
 		"\t</head>\n"
 		"\t<body>",
 		f
@@ -602,8 +604,8 @@ static void generate_html(const document* doc)
 						print_tabs(f, depth);
 						if (element_index == 0)
 						{
-							fprintf(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
-							fprintf(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
+							fprintf(f, "<p class=\"footnote\" id=\"ref%d\">", ctx.ref_count);
+							fprintf(f, "[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
 						}
 						else
 						{
