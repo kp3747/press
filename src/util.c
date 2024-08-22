@@ -58,9 +58,7 @@ static void delete_dir(const char* dir)
 		.fFlags	= FOF_NO_UI
 	};
 
-	const int result = SHFileOperationA(&op);
-	if (result)
-		handle_error("Unable to delete temporary directory \"%s\". Do you have a previously generated file open?", dir);
+	SHFileOperationA(&op);
 }
 
 static FILE* open_file(const char* path, file_mode mode)

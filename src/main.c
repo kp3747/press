@@ -36,7 +36,6 @@ int main(int argc, const char** argv)
 		// Open file dialog
 		OPENFILENAME ofn = {
 			.lStructSize	= sizeof(OPENFILENAME),
-			//.hInstance		= instance,
 			.lpstrFilter	= "Press-formatted text files (*.txt)\0*.txt\0\0",
 			.lpstrFile		= filepath_buffer,
 			.nMaxFile		= sizeof(filepath_buffer),

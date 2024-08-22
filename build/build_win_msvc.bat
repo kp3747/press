@@ -4,11 +4,14 @@ rem Gather arguments
 
 rem Default to release builds and validate config name
 if "%~1"=="" (
-	set %config=release
+	set config=release
+	set default_config=true
 ) else if "%~1"=="debug" (
 	set config=debug
+	set default_config=false
 ) else if "%~1"=="release" (
 	set config=release
+	set default_config=false
 ) else (
 	@echo Unsupported config
 	exit /b
@@ -83,6 +86,10 @@ rem Invoke compiler
 /Fm"build\win_%config%\press.map" ^
 /I %vc_include% /I "%sdk_include%\um" /I "%sdk_include%\ucrt" /I "%sdk_include%\shared" ^
 "src\unity.c" /link /OPT:ref /subsystem:console /incremental:no libucrt.lib Comdlg32.lib Shell32.lib User32.lib /LIBPATH:%vc_lib% /LIBPATH:%sdk_lib% /LIBPATH:%ucrt_lib%
+
+if %default_config%==true (
+	if %errorlevel% neq 0 pause
+)
 
 rem Switch back to calling directory
 popd
