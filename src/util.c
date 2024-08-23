@@ -268,7 +268,7 @@ static void exit_failure(void)
 	fputs(error_buffer, stderr);
 
 	// Break in debugger first
-	assert(false);
+	debug_trap();
 
 	// Show error message box in GUI mode
 	if (error_handler)

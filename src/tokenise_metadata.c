@@ -211,13 +211,13 @@ static int parse_metadata_enum(tokenise_context* ctx, const char* name, const ch
 		}
 	}
 
-	// TODO: Use standard error reporting to support message dialogs in GUI mode
-	fprintf(stderr, "Unknown metadata value for attribute \"%s\". Valid values are:\n", name);
+	// If we get here then no enum value was matched
+	print_error("Unknown metadata value for attribute \"%s\". Valid values are:\n", name);
 	for (int i = 0; i < count; ++i)
-		fprintf(stderr, "%s\n", strings[i]);
+		print_error("%s\n", strings[i]);
+	exit_failure();
 
-	assert(false);
-	exit(EXIT_FAILURE);
+	unreachable();
 }
 
 static void parse_metadata_type(tokenise_context* ctx)
