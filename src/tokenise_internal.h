@@ -24,11 +24,12 @@ typedef struct
 	document_metadata*	metadata;
 } tokenise_context;
 
-static void handle_loc_error(uint32_t line, uint32_t column, const char* format, ...);
-static void handle_peek_error(const peek_state* peek, const char* format, ...);
-static void handle_tokenise_error(const tokenise_context* ctx, const char* format, ...);
-static line_token* add_line_token(tokenise_context* ctx, line_token_type type);
-static void peek_init(tokenise_context* ctx, peek_state* peek);
-static char peek_char(tokenise_context* ctx, peek_state* peek);
-static void peek_apply(tokenise_context* ctx, peek_state* peek);
-static char get_char(tokenise_context* ctx);
+static void			handle_loc_error(uint32_t line, uint32_t column, const char* format, ...);
+static void			handle_peek_error(const peek_state* peek, const char* format, ...);
+static void			handle_tokenise_error(const tokenise_context* ctx, const char* format, ...);
+static line_token*	add_line_token(tokenise_context* ctx, line_token_type type);
+static void			peek_init(tokenise_context* ctx, peek_state* peek);
+static char			peek_char(tokenise_context* ctx, peek_state* peek);
+static void			peek_apply(tokenise_context* ctx, peek_state* peek);
+static char			get_char(tokenise_context* ctx);
+static void			put_char(tokenise_context* ctx, char c);

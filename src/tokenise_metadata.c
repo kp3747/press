@@ -61,47 +61,34 @@ static const char* parse_metadata_text(tokenise_context* ctx)
 {
 	eat_metadata_spaces(ctx);
 
-	// Calculate string length
-	uint32_t len = 0;
-
-	peek_state peek;
-	peek_init(ctx, &peek);
+	// Save position of string that is about to be written
+	const char* text = ctx->write_ptr;
 
 	for (;;)
 	{
-		const char c = peek_char(ctx, &peek);
+		char c = get_char(ctx);
 		if (c == '\n')
 		{
-			handle_peek_error(&peek, "New lines are not permitted within metadata tags \"{...}\".");
+			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"{...}\".");
 		}
 		else if (c == '\t')
 		{
-			handle_peek_error(&peek, "Tabs are not permitted within metadata values.");
+			handle_tokenise_error(ctx, "Tabs are not permitted within metadata values.");
 		}
 		else if (c == '}')
 		{
-			if (peek.pc == ' ')
-				handle_peek_error(&peek, "Trailing spaces are not permitted.");
-
+			// Null terminate string
+			put_char(ctx, 0);
 			break;
 		}
-
-		++len;
+		else
+		{
+			put_char(ctx, c);
+		}
 	}
 
-	if (!len)
+	if (*text == 0)
 		handle_tokenise_error(ctx, "Metadata text expected.");
-
-	// Allocate text memory including null terminator
-	char* text = malloc(len + 1);
-	text[len] = 0;
-
-	// Copy string data
-	for (uint32_t i = 0; i < len; ++i)
-		text[i] = get_char(ctx);
-
-	// Eat final '}' char
-	get_char(ctx);
 
 	return text;
 }
@@ -142,9 +129,6 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 		}
 		else if (c == '}')
 		{
-			if (peek.pc == ' ')
-				handle_loc_error(peek.prev_line, peek.prev_column, "Trailing spaces are not permitted.");
-
 			break;
 		}
 		else
@@ -232,6 +216,7 @@ static int parse_metadata_enum(tokenise_context* ctx, const char* name, const ch
 		}
 	}
 
+	// TODO: Use standard error reporting to support message dialogs in GUI mode
 	fprintf(stderr, "Unknown metadata value for attribute \"%s\". Valid values are:\n", name);
 	for (int i = 0; i < count; ++i)
 		fprintf(stderr, "%s\n", strings[i]);
