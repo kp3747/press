@@ -38,7 +38,7 @@ Parameters:
 
 # Format
 
-The format is very similar to [Markdown](https://www.markdownguide.org/cheat-sheet/). Differences have been introduced to simplify the format by removing unnecessary features, making the raw text more readable, or adding specialised features tailored for books and articles.
+The format is very similar to [Markdown](https://www.markdownguide.org/cheat-sheet/). Differences have been introduced to simplify the format by removing unnecessary features, making the raw text more readable, and adding specialised features tailored for books and articles.
 
 Ultimately the input format is a raw text file, with a strict layout that allows for reading with consistent formatting, and for making the semantics of the text clear to the press tool.
 
