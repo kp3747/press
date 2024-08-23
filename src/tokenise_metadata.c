@@ -97,8 +97,7 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 {
 	eat_metadata_spaces(ctx);
 
-	// Calculate item count and string length in one pass
-	uint32_t len = 0;
+	// Calculate item count
 	uint32_t count = 1;
 	uint32_t current_len = 0;
 
@@ -133,7 +132,6 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 		}
 		else
 		{
-			++len;
 			++current_len;
 		}
 	}
@@ -141,40 +139,37 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 	if (!count)
 		handle_tokenise_error(ctx, "Metadata list expected.");
 
-	// Allocate memory
+	// Allocate list
 	char** list = malloc(sizeof(char**) * count);
-	char* text = malloc(len + count); // One null terminator per string
 
-	// Assign first list item outside loop to simplify loop
-	list[0] = text;
+	// Assign first list element outside loop to simplify loop
+	list[0] = ctx->write_ptr;
 
-	// Copy data
-	uint32_t char_index = 0;
-	uint32_t list_index = 1;
+	uint32_t i = 1;
 	for (;;)
 	{
 		char c = get_char(ctx);
 		if (c == ',')
 		{
-			text[char_index++] = 0;
-			list[list_index++] = text + char_index;
+			// Consume space
+			get_char(ctx);
 
-			// Skip trailing space after comma
-			c = get_char(ctx);
+			// Null terminate previous string
+			put_char(ctx, 0);
+
+			// Assign next list element
+			list[i++] = ctx->write_ptr;
 		}
 		else if (c == '}')
 		{
-			text[char_index++] = 0;
+			put_char(ctx, 0);
 			break;
 		}
 		else
 		{
-			text[char_index++] = c;
+			put_char(ctx, c);
 		}
 	}
-
-	assert(list_index == count);
-	assert(char_index == len + count);
 
 	*out_count = count;
 
