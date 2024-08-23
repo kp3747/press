@@ -38,7 +38,7 @@ Parameters:
 
 # Format
 
-The format is very similar to [Markdown](https://www.markdownguide.org/cheat-sheet/). Differences have been introduced to simplify by removing unnecessary features, making the raw text more readable, or adding a specialised feature for our requirements.
+The format is very similar to [Markdown](https://www.markdownguide.org/cheat-sheet/). Differences have been introduced to simplify the format by removing unnecessary features, making the raw text more readable, and adding specialised features tailored for books and articles.
 
 Ultimately the input format is a raw text file, with a strict layout that allows for reading with consistent formatting, and for making the semantics of the text clear to the press tool.
 
@@ -171,14 +171,16 @@ This paragraph has a comment above it.
 This paragraph has a /*range */comment. It will be printed as "This paragraph has a comment."
 ```
 
-## References
+## Notes
 
-Each reference is defined in two places, using square brackets containing the reference number. The first is placed inline in the text, and the other is placed at the end of the chapter on its own line surrounded by blank lines. Each chapter should reset the reference number to 1. Generated documents may change the reference numbers if they are printed per page or per book.
+Each note is defined in two places, both using square brackets containing the note reference number. The first is placed inline within the text and the other is placed at the end of the chapter, each separated by a blank line. Notes may contain multiple paragraphs, and are terminated when another note or chapter heading is encountered. Each chapter must reset the note number to 1. Generated documents may feature different note numbers depending on whether they are printed per page, chapter, or book.
 
 ```
-This paragraph[1] contains a reference.
+This paragraph has a note.[1]
 
-[1] A paragrph is a series of related sentences...
+[1] This note may be presented as a footnote or endnote.
+
+Notes may contain multiple paragraphs separated by a blank line.
 ```
 
 ## Metadata
