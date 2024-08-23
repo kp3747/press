@@ -27,7 +27,7 @@ int main(int argc, const char** argv)
 	char filepath_buffer[MAX_PATH];
 	const char* filepath = nullptr;
 
-	fputs("ARCP Press Tool v0.9.3\n", stdout);
+	fputs("ARCP Press Tool v0.9.4\n", stdout);
 
 	if (argc <= 1)
 	{

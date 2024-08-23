@@ -96,6 +96,24 @@ static char peek_char_internal(tokenise_context* ctx, peek_state* peek)
 		{
 			// First byte, so increment position
 			++peek->next_column;
+
+			// Check for invalid characters
+			if ((uint8_t)c == 0xE2 && (uint8_t)peek->read_ptr[0] == 0x80)
+			{
+				switch ((uint8_t)peek->read_ptr[1])
+				{
+				case 0x93:
+					handle_tokenise_error(ctx, "En dash characters are not permitted; replace with two hyphens \"--\".");
+				case 0x94:
+					handle_tokenise_error(ctx, "Em dash characters are not permitted; replace with three hyphens \"---\".");
+				case 0x99:
+					handle_tokenise_error(ctx, "Typographic apostrophes are not permitted; replace with standard keyboard apostrophe \"'\".");
+				case 0x9C:
+				case 0x9D:
+				case 0x98:
+					handle_tokenise_error(ctx, "Typographic quotation marks are not permitted; replace with standard keyboard quotations \"\"...\"\" for first level quotations, or backticks \"`...`\" for second level quotations.");
+				}
+			}
 		}
 	}
 	else // ASCII
@@ -457,7 +475,7 @@ static char tokenise_text(tokenise_context* ctx, char c)
 			}
 			else
 			{
-				handle_tokenise_error(ctx, "Mixed quote levels.");
+				handle_tokenise_error(ctx, "Mixed quotation levels; first level quotations require pairs of double quotation marks \"\"...\"\", and second level quotations require pairs of backticks \"`...`\". Third level quotations are not currently supported.");
 			}
 		}
 		else if (c == '`')
@@ -474,7 +492,7 @@ static char tokenise_text(tokenise_context* ctx, char c)
 			}
 			else
 			{
-				handle_tokenise_error(ctx, "Mixed quote levels.");
+				handle_tokenise_error(ctx, "Mixed quotation levels; first level quotations require pairs of double quotation marks \"\"...\"\", and second level quotations require pairs of backticks \"`...`\". Third level quotations are not currently supported.");
 			}
 		}
 		else if (c == '[')
