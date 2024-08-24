@@ -1,3 +1,5 @@
+static char filepath_buffer[64 << 10];
+
 static void print_usage(void)
 {
 	fprintf(stderr,
@@ -24,7 +26,6 @@ int main(int argc, const char** argv)
 	bool odt = false;
 	bool html = false;
 	bool epub = false;
-	char filepath_buffer[MAX_PATH];
 
 	fputs("ARCP Press Tool v0.9.4\n", stdout);
 
@@ -38,21 +39,59 @@ int main(int argc, const char** argv)
 	{
 		install_error_handler(kpress_on_error);
 
+		odt = html = epub = true;
+
 		// Open file dialog
-		OPENFILENAME ofn = {
+		OPENFILENAMEA ofn = {
 			.lStructSize	= sizeof(OPENFILENAME),
 			.lpstrFilter	= "Press-formatted text files (*.txt)\0*.txt\0\0",
 			.lpstrFile		= filepath_buffer,
 			.nMaxFile		= sizeof(filepath_buffer),
-			.Flags			= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR
+			.Flags			= OFN_ALLOWMULTISELECT | OFN_EXPLORER | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR
 		};
 		if (!GetOpenFileNameA(&ofn))
 			return 0;
 
-		odt = html = epub = true;
+		/*
+			GetOpenFileNameA() in multi-select mode returns the following file string format:
+			* Directory path + null terminator.
+			* Multiple filenames and extensions + null terminator as separator.
+			* Final null list terminator.
+		*/
+		
+		// Cache directory string and length
+		const char* dir = filepath_buffer;
+		const int64_t dir_len = strlen(dir);
 
-		mem_alloc(sizeof(const char*));
-		filepaths[filepath_count++] = filepath_buffer;
+		// Count number of file paths
+		const char* current = filepath_buffer + dir_len + 1;
+		for (;;)
+		{
+			if (*current++ == 0)
+			{
+				filepath_count++;
+				if (*current == 0)
+					break;
+			}
+		}
+
+		// Allocate file path array
+		filepaths = mem_alloc(sizeof(const char*) * filepath_count);
+		filepath_count = 0;
+
+		// Allocate and fill file paths
+		current = filepath_buffer + dir_len + 1;
+		do
+		{
+			const int64_t file_len = strlen(current);
+			char* path = mem_alloc(dir_len + 1 + file_len + 1);
+			memcpy(path, dir, dir_len);
+			path[dir_len] = '\\';
+			memcpy(path + dir_len + 1, current, file_len + 1);
+			current += file_len + 1;
+
+			filepaths[filepath_count++] = path;
+		} while(*current != 0);
 	}
 	else
 	{
@@ -124,9 +163,6 @@ int main(int argc, const char** argv)
 				generate_html(&doc);
 			if (epub)
 				generate_epub(&doc);
-
-			if (argc <= 1)
-				system("explorer press_output"); // Open output directory in file explorer
 		}
 
 		mem_pop(frame);
@@ -139,6 +175,9 @@ int main(int argc, const char** argv)
 		printf("Generation successful\n");
 	else
 		printf("Validation successful\n");
+
+	if (argc <= 1)
+		system("explorer press_output"); // Open output directory in file explorer
 
 	return EXIT_SUCCESS;
 }
