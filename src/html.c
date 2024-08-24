@@ -66,7 +66,7 @@ static const char* generate_url_path(const char* title, const char* ext)
 
 	// Allocate worst-case size (output_dir + '/' + title + '.' + extension + null terminator)
 	const int64_t buffer_size = output_len + 1 + strlen(title) + 1 + strlen(ext) + 1;
-	char* buffer = malloc(buffer_size);
+	char* buffer = mem_alloc(buffer_size);
 
 	// Copy output directory path
 	char* current = buffer;
@@ -111,8 +111,6 @@ static const char* generate_url_path(const char* title, const char* ext)
 
 static void output_css(html_context* ctx)
 {
-	//FILE* f = open_file(OUTPUT_DIR "/style.css", file_mode_write);
-
 	// This adds support for light and dark modes based on browser settings
 	fputs(
 		":root {\n\t"
@@ -384,16 +382,15 @@ static void output_css(html_context* ctx)
 		"}\n",
 		ctx->f
 	);
-
-	//fclose(f);
 }
 
 static void generate_html(const document* doc)
 {
-	//create_html_css();
-
+	// Filepath mem is temporary
+	void* frame = mem_push();
 	const char* filepath = generate_url_path(doc->metadata.title, "html");
 	FILE* f = open_file(filepath, file_mode_write);
+	mem_pop(frame);
 
 	html_context ctx = {
 		.f		= f,

@@ -93,23 +93,20 @@ static const char* parse_metadata_text(tokenise_context* ctx)
 	return text;
 }
 
-static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_count)
+static const char* parse_metadata_list(tokenise_context* ctx, uint32_t* out_count)
 {
 	eat_metadata_spaces(ctx);
 
-	// Calculate item count
 	uint32_t count = 1;
 	uint32_t current_len = 0;
-
-	peek_state peek;
-	peek_init(ctx, &peek);
+	const char* output = ctx->write_ptr;
 
 	for (;;)
 	{
-		char c = peek_char(ctx, &peek);
+		char c = get_char(ctx);
 		if (c == ',')
 		{
-			c = peek_char(ctx, &peek);
+			c = get_char(ctx);
 			if (c != ' ')
 				handle_tokenise_error(ctx, "Metadata lists must be separated by a single space.");
 			else if (!current_len)
@@ -117,63 +114,36 @@ static const char** parse_metadata_list(tokenise_context* ctx, uint32_t* out_cou
 
 			++count;
 			current_len = 0;
+
+			// Add null terminator
+			put_char(ctx, 0);
 		}
 		else if (c == '\n')
 		{
-			handle_peek_error(&peek, "New lines are not permitted within metadata tags \"{...}\".");
+			handle_tokenise_error(ctx, "New lines are not permitted within metadata tags \"{...}\".");
 		}
 		else if (c == '\t')
 		{
-			handle_peek_error(&peek, "Tabs are not permitted within metadata values.");
+			handle_tokenise_error(ctx, "Tabs are not permitted within metadata values.");
 		}
 		else if (c == '}')
 		{
+			// Add final terminator
+			put_char(ctx, 0);
+
 			break;
 		}
 		else
 		{
 			++current_len;
-		}
-	}
 
-	if (!count)
-		handle_tokenise_error(ctx, "Metadata list expected.");
-
-	// Allocate list
-	char** list = malloc(sizeof(char**) * count);
-
-	// Assign first list element outside loop to simplify loop
-	list[0] = ctx->write_ptr;
-
-	uint32_t i = 1;
-	for (;;)
-	{
-		char c = get_char(ctx);
-		if (c == ',')
-		{
-			// Consume space
-			get_char(ctx);
-
-			// Null terminate previous string
-			put_char(ctx, 0);
-
-			// Assign next list element
-			list[i++] = ctx->write_ptr;
-		}
-		else if (c == '}')
-		{
-			put_char(ctx, 0);
-			break;
-		}
-		else
-		{
 			put_char(ctx, c);
 		}
 	}
 
 	*out_count = count;
 
-	return list;
+	return output;
 }
 
 static int parse_metadata_enum(tokenise_context* ctx, const char* name, const char** strings, int count)
@@ -245,10 +215,10 @@ static void parse_metadata_title(tokenise_context* ctx)
 
 static void parse_metadata_author(tokenise_context* ctx)
 {
-	if (ctx->metadata->authors)
+	if (ctx->authors)
 		handle_tokenise_error(ctx, "Only one \"Author\" or \"Authors\" metdadata attribute is permitted.");
 
-	ctx->metadata->authors = parse_metadata_list(ctx, &ctx->metadata->author_count);
+	ctx->authors = parse_metadata_list(ctx, &ctx->metadata->author_count);
 
 	if (ctx->metadata->author_count != 1)
 		handle_tokenise_error(ctx, "The \"Author\" metadata attribute only allows for a single author; for mulitple authors use \"Authors\" instead.");
@@ -259,15 +229,15 @@ static void parse_metadata_authors(tokenise_context* ctx)
 	if (ctx->metadata->authors)
 		handle_tokenise_error(ctx, "Only one \"Author\" or \"Authors\" metdadata attribute is permitted.");
 
-	ctx->metadata->authors = parse_metadata_list(ctx, &ctx->metadata->author_count);
+	ctx->authors = parse_metadata_list(ctx, &ctx->metadata->author_count);
 }
 
 static void parse_metadata_translator(tokenise_context* ctx)
 {
-	if (ctx->metadata->translators)
+	if (ctx->translators)
 		handle_tokenise_error(ctx, "Only one \"Translator\" or \"Translators\" metdadata attribute is permitted.");
 
-	ctx->metadata->translators = parse_metadata_list(ctx, &ctx->metadata->translator_count);
+	ctx->translators = parse_metadata_list(ctx, &ctx->metadata->translator_count);
 
 	if (ctx->metadata->translator_count != 1)
 		handle_tokenise_error(ctx, "The \"Translator\" metadata attribute only allows for a single translator; for mulitple translators use \"Translators\" instead.");
@@ -275,10 +245,10 @@ static void parse_metadata_translator(tokenise_context* ctx)
 
 static void parse_metadata_translators(tokenise_context* ctx)
 {
-	if (ctx->metadata->translators)
+	if (ctx->translators)
 		handle_tokenise_error(ctx, "Only one \"Translator\" or \"Translators\" metdadata attribute is permitted.");
 
-	ctx->metadata->translators = parse_metadata_list(ctx, &ctx->metadata->translator_count);
+	ctx->translators = parse_metadata_list(ctx, &ctx->metadata->translator_count);
 }
 
 static void parse_metadata(tokenise_context* ctx, metadata_entry_type entry_type)
@@ -360,4 +330,32 @@ static char tokenise_metadata(tokenise_context* ctx, char c)
 
 	handle_tokenise_error(ctx, "Unrecognised metadata attribute.");
 	return 0;
+}
+
+static const char** finalise_list(const char* src, uint32_t count)
+{
+	if (!count)
+		return nullptr;
+
+	// Allocate array
+	const char** list = mem_alloc(sizeof(const char**) * count);
+
+	// Assign first list element outside loop to simplify loop
+	const char* current = src;
+	list[0] = current;
+
+	// Search for null terminators to fill array
+	for (uint32_t i = 1; i < count;)
+	{
+		if (*current++ == 0)
+			list[i++] = current;
+	}
+
+	return list;
+}
+
+static void finalise_metadata(tokenise_context* ctx)
+{
+	ctx->metadata->authors = finalise_list(ctx->authors, ctx->metadata->author_count);
+	ctx->metadata->translators = finalise_list(ctx->translators, ctx->metadata->translator_count);
 }

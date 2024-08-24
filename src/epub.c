@@ -493,20 +493,10 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 	fclose(f);
 }
 
-static void generate_epub(const document* doc)
+static void generate_epub_zip(const document* doc)
 {
-	create_dir(OUTPUT_DIR "\\epub");
-	create_dir(OUTPUT_DIR "\\epub\\META-INF");
-
-	create_epub_mimetype();
-	create_epub_meta_inf();
-	create_epub_css();
-	create_epub_opf(doc);
-	create_epub_ncx(doc);
-	create_epub_toc(doc);
-
-	for (uint32_t i = 0; i < doc->chapter_count; ++i)
-		create_epub_chapter(doc, i);
+	// Allocations within this function are temporary and do not outlive the function lifetime
+	void* frame = mem_push();
 
 	uint32_t file_count = 5;
 	file_count += doc->chapter_count;
@@ -514,8 +504,8 @@ static void generate_epub(const document* doc)
 		++file_count;
 	const int64_t array_size = sizeof(const char**) * file_count;
 
-	const char** inputs = malloc(array_size);
-	const char** outputs = malloc(array_size);
+	const char** inputs = mem_alloc(array_size);
+	const char** outputs = mem_alloc(array_size);
 
 	inputs[0] = OUTPUT_DIR "/epub/mimetype";
 	outputs[0] = "mimetype";
@@ -549,6 +539,28 @@ static void generate_epub(const document* doc)
 
 	const char* epub_path = generate_path(OUTPUT_DIR "/%s.epub", doc->metadata.title);
 	generate_zip(epub_path, inputs, outputs, file_count);
+
+	mem_pop(frame);
+}
+
+static void generate_epub(const document* doc)
+{
+	void* frame = mem_push();
+
+	create_dir(OUTPUT_DIR "\\epub");
+	create_dir(OUTPUT_DIR "\\epub\\META-INF");
+
+	create_epub_mimetype();
+	create_epub_meta_inf();
+	create_epub_css();
+	create_epub_opf(doc);
+	create_epub_ncx(doc);
+	create_epub_toc(doc);
+
+	for (uint32_t i = 0; i < doc->chapter_count; ++i)
+		create_epub_chapter(doc, i);
+
+	generate_epub_zip(doc);
 
 	delete_dir(OUTPUT_DIR "\\epub");
 }

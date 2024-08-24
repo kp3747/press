@@ -79,6 +79,9 @@ int main(int argc, const char** argv)
 			handle_error("No source file specified.");
 	}
 
+	mem_init();
+	void* frame = mem_push();
+
 	char* text = load_file(filepath);
 
 	document doc = {};
@@ -119,6 +122,9 @@ int main(int argc, const char** argv)
 
 	if (argc <= 1)
 		system("explorer press_output"); // Open output directory in file explorer
+
+	mem_pop(frame);
+	mem_term();
 
 	return EXIT_SUCCESS;
 }

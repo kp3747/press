@@ -1,4 +1,5 @@
 #include "press.h"
+#include "mem.h"
 #include "util.h"
 #include "document.h"
 #include "tokenise.h"
@@ -23,3 +24,4 @@
 #include <windows.h>
 #include "main.c"
 #include "util.c"
+#include "mem.c"

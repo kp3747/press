@@ -16,7 +16,7 @@ static char* load_file(const char* filepath)
 		1. Potential extra new line character before null terminator to make parsing simpler.
 		2. Null terminator.
 	*/
-	char* data = malloc(size + 2);
+	char* data = mem_alloc(size + 2);
 
 	// Put data one byte past the beginning of the buffer to allow space for initial control code
 	fread(data, 1, size, f);
@@ -45,8 +45,10 @@ static void create_dir(const char* dir)
 
 static void delete_dir(const char* dir)
 {
+	void* frame = mem_push();
+
 	const int64_t len = strlen(dir);
-	char* file_path = malloc(len + 2);
+	char* file_path = mem_alloc(len + 2);
 	memcpy(file_path, dir, len);
 
 	// The API requires path to end with two null terminators
@@ -59,6 +61,8 @@ static void delete_dir(const char* dir)
 	};
 
 	SHFileOperationA(&op);
+
+	mem_pop(frame);
 }
 
 static FILE* open_file(const char* path, file_mode mode)
@@ -113,7 +117,7 @@ static const char* copy_filename(const char* filepath)
 	const int64_t len = last_dot - last_dir;
 	assert(len);
 
-	char* filename = malloc(len + 1);
+	char* filename = mem_alloc(len + 1);
 	for (int64_t i = 0; i < len; ++i)
 		filename[i] = last_dir[i];
 	filename[len] = 0;
@@ -127,7 +131,7 @@ static const char* generate_path(const char* format, ...)
 	va_start(args, format);
 
 	const int len = vsnprintf(nullptr, 0, format, args);
-	char* path = malloc(len + 1);
+	char* path = mem_alloc(len + 1);
 
 	vsnprintf(path, len + 1, format, args);
 	va_end(args);

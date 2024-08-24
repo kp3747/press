@@ -88,14 +88,16 @@ void get_dos_date_time(uint16_t* out_date, uint16_t* out_time)
 
 static void generate_zip(const char* filepath, const char** input_files, const char** output_files, uint32_t count)
 {
+	void* frame = mem_push();
+
 	// Cache string lengths
-	uint16_t* filename_lengths = malloc(sizeof(uint16_t) * count);
+	uint16_t* filename_lengths = mem_alloc(sizeof(uint16_t) * count);
 	for (uint32_t i = 0; i < count; ++i)
 		filename_lengths[i] = (uint16_t)strlen(output_files[i]);
 
 	// Open files and cache sizes
-	FILE** file_handles = malloc(sizeof(FILE*) * count);
-	uint32_t* file_sizes = malloc(sizeof(uint32_t) * count);
+	FILE** file_handles = mem_alloc(sizeof(FILE*) * count);
+	uint32_t* file_sizes = mem_alloc(sizeof(uint32_t) * count);
 	for (uint32_t i = 0; i < count; ++i)
 	{
 		file_handles[i] = open_file(input_files[i], file_mode_read);
@@ -122,7 +124,7 @@ static void generate_zip(const char* filepath, const char** input_files, const c
 		handle_error("Output \"%s\" too large.", filepath);
 
 	// Allocate space for entire zip file
-	uint8_t* zip_data = malloc(zip_size);
+	uint8_t* zip_data = mem_alloc(zip_size);
 
 	// Get time and date
 	uint16_t date;
@@ -211,4 +213,6 @@ static void generate_zip(const char* filepath, const char** input_files, const c
 	FILE* zip_file = open_file(filepath, file_mode_write);
 	fwrite(zip_data, zip_size, 1, zip_file);
 	fclose(zip_file);
+
+	mem_pop(frame);
 }

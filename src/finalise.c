@@ -262,7 +262,7 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 		reference_size +
 		reference_element_size
 	;
-	uint8_t* mem = malloc(total_size);
+	uint8_t* mem = mem_alloc(total_size);
 
 	out_doc->chapters = (document_chapter*)mem;
 	mem += chapter_size;

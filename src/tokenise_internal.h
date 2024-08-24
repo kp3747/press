@@ -18,10 +18,11 @@ typedef struct
 	line_token*			current_line;
 	line_token*			lines;
 	uint32_t			line_count;
-	uint32_t			line_capacity;
 	uint32_t			ref_count;
 	peek_state			peek;
 	document_metadata*	metadata;
+	const char*			authors;
+	const char*			translators;
 } tokenise_context;
 
 static void			handle_loc_error(uint32_t line, uint32_t column, const char* format, ...);
@@ -33,3 +34,5 @@ static char			peek_char(tokenise_context* ctx, peek_state* peek);
 static void			peek_apply(tokenise_context* ctx, peek_state* peek);
 static char			get_char(tokenise_context* ctx);
 static void			put_char(tokenise_context* ctx, char c);
+static char			tokenise_metadata(tokenise_context* ctx, char c);
+static void			finalise_metadata(tokenise_context* ctx);

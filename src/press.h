@@ -41,13 +41,6 @@
 	#define unreachable() do { debug_trap(); } while(0)
 #endif
 
-enum
-{
-	page_size = 2 << 20
-};
-
-static_assert((page_size & (page_size - 1)) == 0); // Ensure power of two
-
 #define OUTPUT_DIR "press_output"
 static const char output_dir[] = OUTPUT_DIR;
 enum

@@ -49,19 +49,7 @@ static void handle_tokenise_error(const tokenise_context* ctx, const char* forma
 
 static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 {
-	line_token* line;
-
-	if (ctx->line_count == ctx->line_capacity)
-	{
-		const uint32_t elements_per_page = page_size / sizeof(line_token);
-		const uint32_t current_size = ctx->line_capacity ? ctx->line_capacity / elements_per_page : page_size;
-		const uint32_t next_size = current_size + page_size;
-
-		ctx->lines = realloc(ctx->lines, next_size);
-		ctx->line_capacity += elements_per_page;
-	}
-
-	line = &ctx->lines[ctx->line_count++];
+	line_token* line = mem_alloc(sizeof(line_token));//&ctx->lines[ctx->line_count++];
 	line->type = type;
 	line->line = ctx->peek.line;
 	line->text = ctx->write_ptr;
@@ -72,6 +60,7 @@ static line_token* add_line_token(tokenise_context* ctx, line_token_type type)
 		line->text = nullptr;
 #endif
 
+	++ctx->line_count;
 	ctx->current_line = line;
 
 	return line;
@@ -814,6 +803,12 @@ static void tokenise(char* data, line_tokens* out_tokens, document_metadata* met
 	};
 
 	/*
+		We are using linear allocation so we can just assign the line array to the next address. No
+		other allocations are allowed while the list is being filled.
+	*/
+	ctx.lines = mem_push();
+
+	/*
 		This loop checks the first character of each line and delegates parsing to specialised
 		tokenisation functions. Sometimes the first character may be a false positive, in which case
 		tokenisation is delegated to the more appropriate function. For example, a line starting
@@ -857,4 +852,10 @@ static void tokenise(char* data, line_tokens* out_tokens, document_metadata* met
 	add_line_token(&ctx, line_token_type_eof);
 	out_tokens->lines = ctx.lines;
 	out_tokens->count = ctx.line_count;
+
+	/*
+		Create and populate metadata lists after tokenisation is complete, in order to maintain
+		contiguous token list and allow for linear allocations.
+	*/
+	finalise_metadata(&ctx);
 }
