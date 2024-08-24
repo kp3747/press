@@ -25,9 +25,14 @@ int main(int argc, const char** argv)
 	bool html = false;
 	bool epub = false;
 	char filepath_buffer[MAX_PATH];
-	const char* filepath = nullptr;
 
 	fputs("ARCP Press Tool v0.9.4\n", stdout);
+
+	mem_init();
+	void* frame = mem_push();
+
+	const char** filepaths = frame;
+	uint32_t filepath_count = 0;
 
 	if (argc <= 1)
 	{
@@ -45,7 +50,9 @@ int main(int argc, const char** argv)
 			return 0;
 
 		odt = html = epub = true;
-		filepath = filepath_buffer;
+
+		mem_alloc(sizeof(const char*));
+		filepaths[filepath_count++] = filepath_buffer;
 	}
 	else
 	{
@@ -68,63 +75,70 @@ int main(int argc, const char** argv)
 			}
 			else
 			{
-				if (filepath)
-					handle_error("Only a single source file is currently supported.");
-
-				filepath = argv[i];
+				mem_alloc(sizeof(const char*));
+				filepaths[filepath_count++] = argv[i];
 			}
 		}
-
-		if (!filepath)
-			handle_error("No source file specified.");
 	}
 
-	mem_init();
-	void* frame = mem_push();
+	if (!filepath_count)
+		handle_error("No source file specified.");
 
-	char* text = load_file(filepath);
-
-	document doc = {};
-
-	line_tokens tokens;
-	tokenise(text, &tokens, &doc.metadata);
-
-	// Default to article to allow small documents without any metadata
-	if (doc.metadata.type == document_type_none)
-		doc.metadata.type = document_type_article;
-
-	doc_mem_req mem_req;
-	validate(&tokens, &mem_req);
-
-	finalise(&tokens, &mem_req, &doc);
-
-	if (!doc.metadata.title)
-		doc.metadata.title = copy_filename(filepath);
-
-	if (odt || html || epub)
+	const bool generate = odt || html || epub;
+	if (generate)
 	{
 		delete_dir(output_dir);
 		create_dir(output_dir);
-
-		if (odt)
-			generate_odt(&doc);
-		if (html)
-			generate_html(&doc);
-		if (epub)
-			generate_epub(&doc);
-
-		printf("Generation successful\n");
 	}
-	else
+
+	for (uint32_t i = 0; i < filepath_count; ++i)
 	{
-		printf("Validation successful\n");
-	}
+		void* frame = mem_push();
 
-	if (argc <= 1)
-		system("explorer press_output"); // Open output directory in file explorer
+		printf("Processing \"%s\"\n", filepaths[i]);
+
+		char* text = load_file(filepaths[i]);
+
+		document doc = {};
+
+		line_tokens tokens;
+		tokenise(text, &tokens, &doc.metadata);
+
+		// Default to article to allow small documents without any metadata
+		if (doc.metadata.type == document_type_none)
+			doc.metadata.type = document_type_article;
+
+		doc_mem_req mem_req;
+		validate(&tokens, &mem_req);
+
+		finalise(&tokens, &mem_req, &doc);
+
+		if (!doc.metadata.title)
+			doc.metadata.title = copy_filename(filepaths[i]);
+
+		if (generate)
+		{
+			if (odt)
+				generate_odt(&doc);
+			if (html)
+				generate_html(&doc);
+			if (epub)
+				generate_epub(&doc);
+
+			if (argc <= 1)
+				system("explorer press_output"); // Open output directory in file explorer
+		}
+
+		mem_pop(frame);
+	}
 
 	mem_pop(frame);
 	mem_term();
+
+	if (generate)
+		printf("Generation successful\n");
+	else
+		printf("Validation successful\n");
 
 	return EXIT_SUCCESS;
 }
