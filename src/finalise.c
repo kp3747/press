@@ -143,6 +143,24 @@ static line_token* finalise_reference(finalise_context* ctx, line_token* token)
 	return token;
 }
 
+static line_token* finalise_right_aligned(finalise_context* ctx, line_token* token)
+{
+	finalise_add_element(ctx, document_element_type_right_aligned_begin, nullptr);
+	finalise_add_element(ctx, document_element_type_text_block, token->text);
+
+	token = finalise_get_next_token(ctx);
+	while (token->type == line_token_type_right_aligned)
+	{
+		finalise_add_element(ctx, document_element_type_line_break, nullptr);
+		finalise_add_element(ctx, document_element_type_text_block, token->text);
+		token = finalise_get_next_token(ctx);
+	}
+
+	finalise_add_element(ctx, document_element_type_paragraph_end, nullptr);
+
+	return token;
+}
+
 static line_token* finalise_blockquote(finalise_context* ctx, line_token* token)
 {
 	finalise_add_element(ctx, document_element_type_blockquote_begin, nullptr);
@@ -317,6 +335,9 @@ static void finalise(line_tokens* tokens, const doc_mem_req* mem_req, document* 
 			break;
 		case line_token_type_preformatted:
 			//token = finalise_preformatted(&ctx, token);
+			break;
+		case line_token_type_right_aligned:
+			token = finalise_right_aligned(&ctx, token);
 			break;
 		case line_token_type_block_paragraph:
 			token = finalise_blockquote(&ctx, token);

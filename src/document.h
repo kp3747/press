@@ -15,6 +15,7 @@ typedef enum
 	document_element_type_ordered_list_end,
 	document_element_type_unordered_list_end,
 	document_element_type_blockquote_citation,
+	document_element_type_right_aligned_begin,
 	document_element_type_unordered_list_begin,
 	document_element_type_paragraph_break_begin,
 	document_element_type_ordered_list_begin_roman,

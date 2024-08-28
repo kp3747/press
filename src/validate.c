@@ -148,6 +148,23 @@ static line_token* validate_preformatted(validate_context* ctx, line_token* toke
 	return next;
 }
 
+static line_token* validate_right_aligned(validate_context* ctx, line_token* token)
+{
+	ctx->element_count += 3;
+
+	token = validate_get_next_token(ctx);
+	while (token->type == line_token_type_right_aligned)
+	{
+		ctx->element_count += 2;
+		token = validate_get_next_token(ctx);
+	}
+
+	if (token->type != line_token_type_newline)
+		handle_validate_error(ctx, "Right-aligned text must be followed by a blank line.");
+
+	return token;
+}
+
 static line_token* validate_block_newline(validate_context* ctx, line_token* token)
 {
 	++ctx->element_count;
@@ -306,6 +323,9 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 			break;
 		case line_token_type_preformatted:
 			token = validate_preformatted(&ctx, token);
+			break;
+		case line_token_type_right_aligned:
+			token = validate_right_aligned(&ctx, token);
 			break;
 		case line_token_type_block_newline:
 			handle_validate_error(&ctx, "Block quotes may not begin with a blank line.");

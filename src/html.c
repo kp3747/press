@@ -225,6 +225,16 @@ static void output_css(html_context* ctx)
 	);
 	fputs("\n\n", ctx->f);
 
+	// Right-aligned paragraphs
+	fputs(
+		"p.right-aligned {\n\t"
+			"margin-top: 1em;\n\t"
+			"text-align: right;\n"
+		"}",
+		ctx->f
+	);
+	fputs("\n\n", ctx->f);
+
 	// Paragraph with previous gap
 	fputs(
 		"p.paragraph-break {\n\t"
@@ -542,6 +552,10 @@ static void generate_html(const document* doc)
 				print_em_dash(f);
 				print_html_text_block(&ctx, element->text);
 				fputs("</p>", f);
+				break;
+			case document_element_type_right_aligned_begin:
+				print_tabs(f, depth);
+				fputs("<p class=\"right-aligned\">", f);
 				break;
 			case document_element_type_ordered_list_begin_roman:
 				print_tabs(f, depth++);

@@ -414,15 +414,18 @@ static bool check_dash(tokenise_context* ctx, char c)
 	return false;
 }
 
-static bool check_newline(tokenise_context* ctx, char c)
+static bool check_newline(tokenise_context* ctx, char c, int char_count)
 {
 	if (c == '\n')
 	{
-		// Null terminate
-		put_char(ctx, 0);
+		if (!char_count)
+			handle_tokenise_error(ctx, "Empty text blocks are not permitted.");
 
 		if (ctx->peek.pc == ' ')
 			handle_loc_error(ctx->peek.prev_line, ctx->peek.prev_column, "Trailing spaces are not permitted.");
+
+		// Null terminate
+		put_char(ctx, 0);
 
 		return true;
 	}
@@ -435,6 +438,7 @@ static char tokenise_text(tokenise_context* ctx, char c)
 	if (c == ' ')
 		handle_tokenise_error(ctx, "Leading spaces are not permitted.");
 
+	int char_count = 0;
 	int quote_level = 0;
 	emphasis_state em_state = emphasis_state_none;
 
@@ -513,12 +517,13 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		else if (check_dash(ctx, c))
 		{
 		}
-		else if (check_newline(ctx, c))
+		else if (check_newline(ctx, c, char_count))
 		{
 			break;
 		}
 		else
 		{
+			++char_count;
 			put_char(ctx, c);
 		}
 
@@ -729,6 +734,20 @@ static char tokenise_blockquote(tokenise_context* ctx, char c)
 	return c;
 }
 
+static char tokenise_right_aligned(tokenise_context* ctx, char c)
+{
+	c = get_char(ctx);
+	if (c != ' ')
+		handle_tokenise_error(ctx, "Right-aligned text \">\" must be followed by a space.");
+
+	// Consime space
+	c = get_char(ctx);
+
+	add_line_token(ctx, line_token_type_right_aligned);
+
+	return tokenise_text(ctx, c);
+}
+
 static char tokenise_bracket(tokenise_context* ctx, char c)
 {
 	c = get_char(ctx);
@@ -827,6 +846,8 @@ static void tokenise(char* data, line_tokens* out_tokens, document_metadata* met
 			c = tokenise_bracket(&ctx, c);
 		else if (c == '\t')
 			c = tokenise_blockquote(&ctx, c);
+		else if (c == '>')
+			c = tokenise_right_aligned(&ctx, c);
 		else if (c == '\n')
 			c = tokenise_newline(&ctx, c, false);
 		else if (c == '#')

@@ -10,6 +10,7 @@ typedef enum
 	line_token_type_heading_3,
 	line_token_type_reference,
 	line_token_type_preformatted,
+	line_token_type_right_aligned,
 	line_token_type_block_newline,
 	line_token_type_unordered_list,
 	line_token_type_block_citation,
