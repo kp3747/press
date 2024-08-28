@@ -27,7 +27,7 @@ int main(int argc, const char** argv)
 	bool html = false;
 	bool epub = false;
 
-	fputs("ARCP Press Tool v0.9.4\n", stdout);
+	fputs("ARCP Press Tool v0.9.6\n", stdout);
 
 	mem_init();
 	void* frame = mem_push();
