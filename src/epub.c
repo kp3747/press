@@ -47,6 +47,16 @@ static void create_epub_css(void)
 	);
 	fputs("\n\n", f);
 
+	// Right-aligned paragraphs
+	fputs(
+		"p.right-aligned {\n\t"
+			"margin-top: 1em;\n\t"
+			"text-align: right;\n"
+		"}",
+		f
+	);
+	fputs("\n\n", f);
+
 	// Paragraph with previous gap
 	fputs(
 		".paragraph-break {\n\t"
@@ -208,7 +218,7 @@ static void create_epub_opf(const document* doc)
 	fputs("\t\t<item id=\"ncx\" href=\"toc.ncx\" media-type=\"application/x-dtbncx+xml\"/>\n", f);
 	fputs("\t\t<item id=\"css\" href=\"style.css\" media-type=\"text/css\"/>\n", f);
 
-//	fprintf(f, "\t\t<item id=\"cover\" href=\"cover.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
+	fprintf(f, "\t\t<item id=\"cover\" href=\"cover.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
 //	fprintf(f, "\t\t<item id=\"cover_image\" href=\"cover.png\" media-type=\"image/png\"/>\n");
 
 	if (doc->chapter_count > 1)
@@ -220,7 +230,7 @@ static void create_epub_opf(const document* doc)
 
 	fputs("\t<spine toc=\"ncx\">\n", f);
 
-	//fputs("\t\t<itemref idref=\"cover\"/>\n", f);
+	fputs("\t\t<itemref idref=\"cover\"/>\n", f);
 
 	if (doc->chapter_count > 1)
 		fputs("\t\t<itemref idref=\"toc\"/>\n", f);
@@ -272,17 +282,65 @@ static void create_epub_ncx(const document* doc)
 	fclose(f);
 }
 
+static void create_epub_cover(const document* doc)
+{
+	FILE* f = open_file(OUTPUT_DIR "/epub/cover.xhtml", file_mode_write);
+
+	fprintf(f,
+		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+		"<html xmlns=\"http://www.w3.org/1999/xhtml\">\n\t"
+			"<head>\n\t\t"
+				"<title>Cover</title>\n\t\t"
+				"<style>\n"
+		"body {\n\t"
+			"text-align: center;\n"
+		"}\n\t\t"
+				"</style>\n\t"
+			"</head>\n\t"
+			"<body>\n\t\t"
+				"<h1>%s</h1>",
+		doc->metadata.title
+	);
+
+	if (doc->metadata.author_count)
+	{
+		fprintf(f, "\n\t\t<p>");
+
+		for (uint32_t i = 0; i < doc->metadata.author_count - 1; ++i)
+			fprintf(f, "\n\t\t\t%s<br/>", doc->metadata.authors[i]);
+		fprintf(f, "\n\t\t\t%s", doc->metadata.authors[doc->metadata.author_count - 1]);
+
+		fprintf(f, "\n\t\t</p>");
+	}
+
+	if (doc->metadata.translator_count)
+	{
+		fprintf(f, "\n\t\t<p>");
+		fprintf(f, "\n\t\t\tTranslated by:<br/>");
+
+		for (uint32_t i = 0; i < doc->metadata.translator_count - 1; ++i)
+			fprintf(f, "\n\t\t\t%s<br/>", doc->metadata.translators[i]);
+		fprintf(f, "\n\t\t\t%s", doc->metadata.translators[doc->metadata.translator_count - 1]);
+
+		fprintf(f, "\n\t\t</p>");
+	}
+
+	fputs(
+		"\n\t"
+			"</body>\n"
+		"</html>",
+		f
+	);
+
+	fclose(f);
+}
+
 static void create_epub_toc(const document* doc)
 {
 	if (doc->chapter_count < 2)
 		return;
 
 	FILE* f = open_file(OUTPUT_DIR "/epub/toc.xhtml", file_mode_write);
-
-	html_context ctx = {
-		.f		= f,
-		.doc	= doc
-	};
 
 	fprintf(f,
 		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -302,7 +360,7 @@ static void create_epub_toc(const document* doc)
 		document_element* heading = doc->chapters[chapter_index].elements;
 
 		fprintf(f, "\t\t\t\t<li><a href=\"chapter%d.xhtml\">", chapter_index + 1);
-		print_simple_text(ctx.f, heading->text);
+		print_simple_text(f, heading->text);
 		fprintf(f, "</a></li>\n");
 	}
 
@@ -406,6 +464,10 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			print_html_text_block(&ctx, element->text);
 			fputs("</p>", f);
 			break;
+		case document_element_type_right_aligned_begin:
+				print_tabs(f, depth);
+				fputs("<p class=\"right-aligned\">", f);
+				break;
 		case document_element_type_ordered_list_begin_roman:
 			print_tabs(f, depth++);
 			fputs("<ol type=\"I\">", f);
@@ -458,7 +520,7 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 					print_html_text_block(&ctx, element->text);
 					break;
 				case document_element_type_line_break:
-					fputs("<br>", f);
+					fputs("<br/>", f);
 					break;
 				case document_element_type_paragraph_begin:
 					print_tabs(f, depth);
@@ -498,7 +560,7 @@ static void generate_epub_zip(const document* doc)
 	// Allocations within this function are temporary and do not outlive the function lifetime
 	void* frame = mem_push();
 
-	uint32_t file_count = 5;
+	uint32_t file_count = 6;
 	file_count += doc->chapter_count;
 	if (doc->chapter_count > 1)
 		++file_count;
@@ -522,18 +584,21 @@ static void generate_epub_zip(const document* doc)
 	inputs[4] = OUTPUT_DIR "/epub/toc.ncx";
 	outputs[4] = "toc.ncx";
 
-	inputs[5] = OUTPUT_DIR "/epub/chapter1.xhtml";
-	outputs[5] = "chapter1.xhtml";
+	inputs[5] = OUTPUT_DIR "/epub/cover.xhtml";
+	outputs[5] = "cover.xhtml";
+
+	inputs[6] = OUTPUT_DIR "/epub/chapter1.xhtml";
+	outputs[6] = "chapter1.xhtml";
 
 	if (doc->chapter_count > 1)
 	{
-		inputs[6] = OUTPUT_DIR "/epub/toc.xhtml";
-		outputs[6] = "toc.xhtml";
+		inputs[7] = OUTPUT_DIR "/epub/toc.xhtml";
+		outputs[7] = "toc.xhtml";
 
 		for (uint32_t i = 1; i < doc->chapter_count; ++i)
 		{
-			inputs[6 + i] = generate_path(OUTPUT_DIR "/epub/chapter%d.xhtml", i + 1);
-			outputs[6 + i] = generate_path("chapter%d.xhtml", i + 1);
+			inputs[7 + i] = generate_path(OUTPUT_DIR "/epub/chapter%d.xhtml", i + 1);
+			outputs[7 + i] = generate_path("chapter%d.xhtml", i + 1);
 		}
 	}
 
@@ -555,6 +620,7 @@ static void generate_epub(const document* doc)
 	create_epub_css();
 	create_epub_opf(doc);
 	create_epub_ncx(doc);
+	create_epub_cover(doc);
 	create_epub_toc(doc);
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)

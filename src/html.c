@@ -157,8 +157,7 @@ static void output_css(html_context* ctx)
 		"h1.title {\n\t"
 			"font-size: 48px;\n\t"
 			"padding-top: 128px;\n\t"
-			"padding-bottom: 128px;\n\t"
-			"page-break-before: avoid;\n"
+			"padding-bottom: 128px;\n"
 		"}",
 		ctx->f
 	);
