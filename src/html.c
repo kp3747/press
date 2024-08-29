@@ -125,14 +125,19 @@ static void generate_html(const document* doc)
 	fputs(
 		"<!DOCTYPE html>\n"
 		"<html lang=\"en-GB\">\n"
-		"\t<head>\n"
-		"\t\t<meta charset=\"UTF-8\">\n"
-		"\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n",
+		"	<head>\n"
+		"		<meta charset=\"UTF-8\">\n"
+		"		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n",
 		f
 	);
 
 	if (doc->metadata.title)
-		fprintf(f, "\t\t<title>%s</title>\n", doc->metadata.title);
+	{
+		fputs("\t\t<title>", f);
+		// TODO: Text tokens are not currently supported, but this will work once they are
+		print_simple_text(f, doc->metadata.title);
+		fputs("</title\n>", f);
+	}
 
 	fputs("\t\t<style>\n", f);
 	static void output_css(html_context* ctx);
