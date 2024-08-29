@@ -649,5 +649,5 @@ static void generate_epub(const document* doc, const char* cover)
 
 	generate_epub_zip(doc);
 
-	//delete_dir(OUTPUT_DIR "\\epub");
+	delete_dir(OUTPUT_DIR "\\epub");
 }

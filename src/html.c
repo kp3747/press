@@ -111,284 +111,187 @@ static const char* generate_url_path(const char* title, const char* ext)
 
 static void output_css(html_context* ctx)
 {
-	// This adds support for light and dark modes based on browser settings
-	fputs(
-		":root {\n\t"
-			"color-scheme: light dark;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
 	// Default universal settings
 	fputs(
-		"body {\n\t"
-			// Set font and base size
-			"font-family: \"Georgia\", serif;\n\t"
-			"font-size: 18px;\n\t"
-			// Set theme colours
-			"color: light-dark(#000000, #E0E0E0);\n\t"
-			"background-color: light-dark(#FFFFFF, #1E1E1E);\n\t"
-			// Centre text at a comfortable column width for reading
-			"max-width: 55ch;\n\t"
-			"margin-left: auto;\n\t"
-			"margin-right: auto;\n\t"
-			// Add padding so we don't go up against the edges of small displays
-			"padding-left: 1em;\n\t"
-			"padding-right: 1em;\n\t"
-			"padding-bottom: 1em;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Chapter headings are centred
-	fputs(
-		"h1 {\n\t"
-			"text-align: center;\n"//\t"
-			//"page-break-before: always;\n" // Ensures chapters start on a new page when printed
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Title heading
-	fputs(
-		"h1.title {\n\t"
-			"font-size: 48px;\n\t"
-			"padding-top: 128px;\n\t"
-			"padding-bottom: 128px;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Superscript
-	fputs(
-		"sup {\n\t"
-			"line-height: 0;\n\t"	// Prevent references from increasing line height
-			"font-size: 0.75em;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Remove underlines from hyperlinks
-	fputs(
-		"a {\n\t"
-			"text-decoration: none;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Add underline when hovering over link
-	fputs(
-		"a:hover {\n\t"
-			"text-decoration: underline;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Links should not stand out when printing
-	fputs(
-		"@media print {\n\t"
-			"a {\n\t\t"
-				"color: black;\n\t"
-			"}\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Avoid new lines after a heading when printing
-	fputs(
-		"h1, h2, h3 {\n\t"
-			"page-break-after: avoid;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Paragraphs which don't follow a heading are not indented
-	fputs(
-		"p {\n\t"
-			"margin-top: 0;\n\t"
-			"text-indent: 1.5em;\n\t"
-			"text-align: justify;\n\t"
-			"hyphens: auto;\n\t"
-			"margin-bottom: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Right-aligned paragraphs
-	fputs(
-		"p.right-aligned {\n\t"
-			"margin-top: 1em;\n\t"
-			"text-align: right;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Paragraph with previous gap
-	fputs(
-		"p.paragraph-break {\n\t"
-			"margin-top: 1em;\n\t"
-			"text-indent: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Authors
-	fputs(
-		"p.authors {\n\t"
-			"text-align: center;\n\t"
-			"padding-top: 0;\n\t"
-			"padding-bottom: 128px;\n\t"
-			"text-indent: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// First footnote paragraph
-	fputs(
-		"p.footnote {\n\t"
-			"margin-top: 1.5em;\n\t"
-			"text-indent: 0;\n\t"
-			"font-size: 0.75em;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Footnote paragraph
-	fputs(
-		"p.footnote_paragraph {\n\t"
-			"text-indent: 1.5em;\n\t"
-			"font-size: 0.75em;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Footnote following another footnote
-	fputs(
-		"p.footnote_paragraph + p.footnote {\n\t"
-			"margin-top: 1em;\n"
+		// This adds support for light and dark modes based on browser settings
+		":root {\n"
+		"	color-scheme: light dark;\n"
 		"}\n\n"
-		"p.footnote + p.footnote {\n\t"
-			"margin-top: 1em;\n"
-		"}\n\n",
-		ctx->f
-	);
 
-	// Paragraphs after headings are not indented
-	fputs(
+		"body {\n"
+		// Set font and base size
+		"	font-family: 'Georgia', serif;\n"
+		"	font-size: 18px;\n"
+		// Set theme colours
+		"	color: light-dark(#000000, #E0E0E0);\n"
+		"	background-color: light-dark(#FFFFFF, #1E1E1E);\n"
+		// Centre text at a comfortable column width for reading
+		"	max-width: 55ch;\n"
+		"	margin-left: auto;\n"
+		"	margin-right: auto;\n"
+		// Add padding so we don't go up against the edges of small displays
+		"	padding-left: 1em;\n"
+		"	padding-right: 1em;\n"
+		"	padding-bottom: 1em;\n"
+		"}\n\n"
+
+		// Chapter headings are centred
+		"h1 {\n"
+		"	text-align: center;\n"
+		"}\n\n"
+
+		// Title heading
+		"h1.title {\n"
+		"	font-size: 48px;\n"
+		"	padding-top: 128px;\n"
+		"	padding-bottom: 128px;\n"
+		"}\n\n"
+
+		// Superscript
+		"sup {\n"
+		"	line-height: 0;\n"		// Prevent references from increasing line height
+		"	font-size: 0.75em;\n"
+		"}\n\n"
+
+		// Remove underlines from hyperlinks
+		"a {\n"
+		"	text-decoration: none;\n"
+		"}\n\n"
+
+		// Add underline when hovering over link
+		"a:hover {\n"
+		"	text-decoration: underline;\n"
+		"}\n\n"
+
+		// Links should not stand out when printing
+		"@media print {\n"
+		"	a {\n"
+		"		color: black;\n"
+		"	}\n"
+		"}\n\n"
+
+		// Avoid new lines after a heading when printing
+		"h1, h2, h3 {\n"
+		"	page-break-after: avoid;\n"
+		"}\n\n"
+
+		// Paragraphs which don't follow a heading are not indented
+		"p {\n"
+		"	margin-top: 0;\n"
+		"	text-indent: 1.5em;\n"
+		"	text-align: justify;\n"
+		"	hyphens: auto;\n"
+		"	margin-bottom: 0;\n"
+		"}\n\n"
+
+		// Right-aligned paragraphs
+		"p.right-aligned {\n"
+		"	margin-top: 1em;\n"
+		"	text-align: right;\n"
+		"}\n\n"
+
+		// Paragraph with previous gap
+		"p.paragraph-break {\n"
+		"	margin-top: 1em;\n"
+		"	text-indent: 0;\n"
+		"}\n\n"
+
+		// Authors
+		"p.authors {\n"
+		"	text-align: center;\n"
+		"	padding-top: 0;\n"
+		"	padding-bottom: 128px;\n"
+		"	text-indent: 0;\n"
+		"}\n\n"
+
+		// First footnote paragraph
+		"p.footnote {\n"
+		"	margin-top: 1.5em;\n"
+		"	text-indent: 0;\n"
+		"	font-size: 0.75em;\n"
+		"}\n\n"
+
+		// Subsequent footnote paragraph
+		"p.footnote_paragraph {\n"
+		"	text-indent: 1.5em;\n"
+		"	font-size: 0.75em;\n"
+		"}\n\n"
+
+		// Footnotes following another footnote
+		"p.footnote_paragraph + p.footnote {\n"
+		"	margin-top: 1em;\n"
+		"}\n\n"
+
+		"p.footnote + p.footnote {\n"
+		"	margin-top: 1em;\n"
+		"}\n\n"
+
+		// Paragraphs after headings are not indented
 		"h1 + p,\n"
 		"h2 + p,\n"
-		"h3 + p {\n\t"
-			"text-indent: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Blockquote indentation
-	fputs(
-		"blockquote {\n\t"
-			"margin-left: 1.5em;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// First paragraphs within a blockquote are not indented
-	fputs(
-		"blockquote p {\n\t"
-			"text-indent: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Paragraphs following first blockquote paragraph are indented
-	fputs(
-		"blockquote p + p {\n\t"
-			"text-indent: 1.5em;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Paragraphs following blockquotes are not indented
-	fputs(
-		"blockquote + p {\n\t"
-			"text-indent: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Paragraphs following dinkuses are not indented
-	fputs(
-		"hr + p {\n\t"
-			"text-indent: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Lists
-	fputs(
-		"ol, ul {\n\t"
-			"text-align: justify;\n\t"
-			"hyphens: auto;\n\t"
-			"margin-left: 1.5em;\n\t"
-			"padding-left: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Paragraphs following lists are not be indented
-	fputs(
-		"ol + p,\n"
-		"ul + p {\n\t"
-			"text-indent: 0;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Chapter list should be left-aligned
-	fputs(
-		"ul.chapters {\n\t"
-			"text-align: left;\n"
-		"}",
-		ctx->f
-	);
-	fputs("\n\n", ctx->f);
-
-	// Turn HR tags into dinkuses ("* * *")
-	fputs(
-		"hr {\n\t"
-			"border: none;\n\t"
-			"word-spacing: 1em;\n\t"
-			"margin-top: 1.5em;\n\t"
-			"margin-bottom: 1.5em;\n"
+		"h3 + p {\n"
+		"	text-indent: 0;\n"
 		"}\n\n"
-		"hr::before {\n\t"
-			"color: light-dark(#000000, #E0E0E0);\n\t"
-			"content: '* * *';\n\t"
-			"display: block;\n\t"
-			"text-align:center;\n"
-		"}\n",
+
+		// Blockquote indentation
+		"blockquote {\n"
+		"	margin-left: 1.5em;\n"
+		"}\n\n"
+
+		// First paragraphs within a blockquote are not indented
+		"blockquote p {\n"
+		"	text-indent: 0;\n"
+		"}\n\n"
+
+		// Paragraphs following first blockquote paragraph are indented
+		"blockquote p + p {\n"
+		"	text-indent: 1.5em;\n"
+		"}\n\n"
+
+		// Paragraphs following blockquotes are not indented
+		"blockquote + p {\n"
+		"	text-indent: 0;\n"
+		"}\n\n"
+
+		// Paragraphs following dinkuses are not indented
+		"hr + p {\n"
+		"	text-indent: 0;\n"
+		"}\n\n"
+
+		// Lists
+		"ol, ul {\n"
+		"	text-align: justify;\n"
+		"	hyphens: auto;\n"
+		"	margin-left: 1.5em;\n"
+		"	padding-left: 0;\n"
+		"}\n\n"
+
+		// Paragraphs following lists are not be indented
+		"ol + p,\n"
+		"ul + p {\n"
+		"	text-indent: 0;\n"
+		"}\n\n"
+
+		// Chapter list should be left-aligned
+		"ul.chapters {\n"
+		"	text-align: left;\n"
+		"}\n\n"
+
+		// Turn HR tags into dinkuses ("* * *")
+		"hr {\n"
+		"	border: none;\n"
+		"	word-spacing: 1em;\n"
+		"	margin-top: 1.5em;\n"
+		"	margin-bottom: 1.5em;\n"
+		"}\n\n"
+
+		"hr::before {\n"
+		"	color: light-dark(#000000, #E0E0E0);\n"
+		"	content: '* * *';\n"
+		"	display: block;\n"
+		"	text-align:center;\n"
+		"}\n"
+		,
 		ctx->f
 	);
 }
