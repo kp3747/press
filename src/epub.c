@@ -282,8 +282,29 @@ static void create_epub_ncx(const document* doc)
 	fclose(f);
 }
 
-static void create_epub_cover(const document* doc)
+static void create_epub_cover(const document* doc, const char* cover)
 {
+	if (cover)
+	{
+		void* frame = mem_push();
+
+		// Load file
+		FILE* src = open_file(cover, file_mode_read);
+		const uint32_t size = get_file_size(src);
+		char* data = mem_alloc(size);
+		fread(data, 1, size, src);
+		fclose(src);
+
+		// Save file
+		FILE* dst = open_file(OUTPUT_DIR "/epub/cover.xhtml", file_mode_write);
+		fwrite(data, 1, size, dst);
+		fclose(dst);
+
+		mem_pop(frame);
+
+		return;
+	}
+
 	FILE* f = open_file(OUTPUT_DIR "/epub/cover.xhtml", file_mode_write);
 
 	fprintf(f,
@@ -608,7 +629,7 @@ static void generate_epub_zip(const document* doc)
 	mem_pop(frame);
 }
 
-static void generate_epub(const document* doc)
+static void generate_epub(const document* doc, const char* cover)
 {
 	void* frame = mem_push();
 
@@ -620,7 +641,7 @@ static void generate_epub(const document* doc)
 	create_epub_css();
 	create_epub_opf(doc);
 	create_epub_ncx(doc);
-	create_epub_cover(doc);
+	create_epub_cover(doc, cover);
 	create_epub_toc(doc);
 
 	for (uint32_t i = 0; i < doc->chapter_count; ++i)
@@ -628,5 +649,5 @@ static void generate_epub(const document* doc)
 
 	generate_epub_zip(doc);
 
-	delete_dir(OUTPUT_DIR "\\epub");
+	//delete_dir(OUTPUT_DIR "\\epub");
 }

@@ -26,6 +26,7 @@ int main(int argc, const char** argv)
 	bool odt = false;
 	bool html = false;
 	bool epub = false;
+	const char* epub_cover = nullptr;
 
 	fputs("ARCP Press Tool v0.9.6\n", stdout);
 
@@ -100,17 +101,36 @@ int main(int argc, const char** argv)
 			if (*argv[i] == '-')
 			{
 				if (strcmp(argv[i], "--all") == 0)
+				{
 					odt = html = epub = true;
+				}
 				else if (strcmp(argv[i], "--odt") == 0)
+				{
 					odt = true;
+				}
 				else if (strcmp(argv[i], "--html") == 0)
+				{
 					html = true;
+				}
 				else if (strcmp(argv[i], "--epub") == 0)
+				{
 					epub = true;
+				}
+				else if (strcmp(argv[i], "--epub-cover") == 0)
+				{
+					if (i == argc - 1)
+						handle_error("\"--epub-cover\" argument requires a file path to an HTML file.");
+
+					epub_cover = argv[++i];
+				}
 				else if (strcmp(argv[i], "--help") == 0)
+				{
 					print_usage();
+				}
 				else
+				{
 					handle_error("Unsupported argument \"%s\".", argv[i]);
+				}
 			}
 			else
 			{
@@ -162,7 +182,7 @@ int main(int argc, const char** argv)
 			if (html)
 				generate_html(&doc);
 			if (epub)
-				generate_epub(&doc);
+				generate_epub(&doc, epub_cover);
 		}
 
 		mem_pop(frame);

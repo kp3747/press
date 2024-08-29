@@ -14,4 +14,4 @@ static void generate_zip(const char* filepath, const char** input_files, const c
 
 static void generate_odt(const document* doc);
 static void generate_html(const document* doc);
-static void generate_epub(const document* doc);
+static void generate_epub(const document* doc, const char* cover);
