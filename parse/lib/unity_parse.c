@@ -2,7 +2,7 @@
 
 //#include "mem.h"
 //#include "document.h"
-#include "../src/util.h"
+#include "../../press/src/util.h" // TODO: Move to parse
 #include "../src/tokenise.h"
 #include "../src/validate.h"
 #include "../src/finalise.h"

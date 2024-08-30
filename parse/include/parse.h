@@ -36,6 +36,31 @@
 	#define unreachable() do { debug_trap(); } while(0)
 #endif
 
+/*
+	These values must remain below 32 (space), and suported ASCII characters must line up with ASCII
+	value. Currently these are null, tab, and newline.
+*/
+typedef enum
+{
+	text_token_type_null					= 0,
+	text_token_type_en_dash					= 1,
+	text_token_type_em_dash					= 2,
+	text_token_type_reference				= 3,
+	text_token_type_strong_end				= 4,
+	text_token_type_emphasis_end			= 5,
+	text_token_type_preformatted			= 6,
+	text_token_type_strong_begin			= 7,
+	text_token_type_emphasis_begin			= 8,
+	text_token_type_tab						= 9,
+	text_token_type_newline					= 10,
+	text_token_type_quote_level_1_begin		= 11,
+	text_token_type_quote_level_1_end		= 12,
+	text_token_type_quote_level_2_begin		= 13,
+	text_token_type_quote_level_2_end		= 14,
+	text_token_type_left_square_bracket		= 15,
+	text_token_type_right_square_bracket	= 16
+} text_token_type;
+
 typedef enum
 {
 	document_element_type_dinkus,
