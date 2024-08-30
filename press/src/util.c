@@ -8,7 +8,7 @@
 
 static char* load_file(const char* filepath)
 {
-	FILE* f = open_file(filepath, file_mode_read);
+	file f = open_file(filepath, file_mode_read);
 	const uint32_t size = get_file_size(f);
 
 	/*
@@ -19,8 +19,8 @@ static char* load_file(const char* filepath)
 	char* data = mem_alloc(size + 2);
 
 	// Put data one byte past the beginning of the buffer to allow space for initial control code
-	fread(data, 1, size, f);
-	fclose(f);
+	fread(data, 1, size, f.f);
+	fclose(f.f);
 
 	// Check if final new line character needs to be added, then null terminate
 	if (data[size - 1] == '\n')
@@ -36,36 +36,36 @@ static char* load_file(const char* filepath)
 	return data;
 }
 
-static void create_dir(const char* dir)
-{
-	const BOOL result = CreateDirectoryA(dir, nullptr);
-	if (!result)
-		handle_error("Unable to create directory \"%s\". Do you have a previously generated file open?", dir);
-}
+//static void create_dir(const char* dir)
+//{
+//	const BOOL result = CreateDirectoryA(dir, nullptr);
+//	if (!result)
+//		handle_error("Unable to create directory \"%s\". Do you have a previously generated file open?", dir);
+//}
 
-static void delete_dir(const char* dir)
-{
-	void* frame = mem_push();
+//static void delete_dir(const char* dir)
+//{
+//	void* frame = mem_push();
+//
+//	const int64_t len = strlen(dir);
+//	char* file_path = mem_alloc(len + 2);
+//	memcpy(file_path, dir, len);
+//
+//	// The API requires path to end with two null terminators
+//	file_path[len] = file_path[len + 1] = 0;
+//
+//	SHFILEOPSTRUCT op = {
+//		.wFunc	= FO_DELETE,
+//		.pFrom	= file_path,
+//		.fFlags	= FOF_NO_UI
+//	};
+//
+//	SHFileOperationA(&op);
+//
+//	mem_pop(frame);
+//}
 
-	const int64_t len = strlen(dir);
-	char* file_path = mem_alloc(len + 2);
-	memcpy(file_path, dir, len);
-
-	// The API requires path to end with two null terminators
-	file_path[len] = file_path[len + 1] = 0;
-
-	SHFILEOPSTRUCT op = {
-		.wFunc	= FO_DELETE,
-		.pFrom	= file_path,
-		.fFlags	= FOF_NO_UI
-	};
-
-	SHFileOperationA(&op);
-
-	mem_pop(frame);
-}
-
-static FILE* open_file(const char* path, file_mode mode)
+static file open_file(const char* path, file_mode mode)
 {
 	const char* mode_string;
 	if (mode == file_mode_read)
@@ -73,21 +73,37 @@ static FILE* open_file(const char* path, file_mode mode)
 	else
 		mode_string = "wb";
 
-	FILE* f = fopen(path, mode_string);
-	if (!f)
+	file f;
+	f.f = fopen(path, mode_string);
+	if (!f.f)
 		handle_error("Unable to open file \"%s\": %s.\n", path, strerror(errno));
 
 	return f;
 }
 
-static uint32_t get_file_size(FILE* f)
+static void close_file(file f)
+{
+	fclose(f.f);
+}
+
+static uint32_t get_file_size(file f)
 {
 	// Get file size
-	fseek(f, 0, SEEK_END);
-	const long size = ftell(f);
-	rewind(f);
+	fseek(f.f, 0, SEEK_END);
+	const long size = ftell(f.f);
+	rewind(f.f);
 
 	return size;
+}
+
+static void read_file(file f, void* dst, uint32_t size)
+{
+	fread(dst, 1, size, f.f);
+}
+
+static void write_file(file f, const void* src, size_t size)
+{
+	fwrite(src, 1, size, f.f);
 }
 
 static const char* copy_filename(const char* filepath)
@@ -139,63 +155,25 @@ static const char* generate_path(const char* format, ...)
 	return path;
 }
 
-static void print_tabs(FILE* f, int depth)
+static void print_str(file f, const char* s)
 {
-	fputc('\n', f);
-	for (int i = 0; i < depth; ++i)
-		fputc('\t', f);
+	fputs(s, f.f);
 }
 
-static void print_en_dash(FILE* f)
+static void print_fmt(file f, const char* format, ...)
 {
-	fputc(0xE2, f);
-	fputc(0x80, f);
-	fputc(0x93, f);
+	va_list args;
+	va_start(args, format);
+	vfprintf(f.f, format, args);
+	va_end(args);
 }
 
-static void print_em_dash(FILE* f)
+static void print_char(file f, char c)
 {
-	fputc(0xE2, f);
-	fputc(0x80, f);
-	fputc(0x94, f);
+	fputc(c, f.f);
 }
 
-static void print_apostrophe(FILE* f)
-{
-	fputc(0xE2, f);
-	fputc(0x80, f);
-	fputc(0x99, f);
-}
-
-static void print_quote_level_1_begin(FILE* f)
-{
-	fputc(0xE2, f);
-	fputc(0x80, f);
-	fputc(0x9C, f);
-}
-
-static void print_quote_level_1_end(FILE* f)
-{
-	fputc(0xE2, f);
-	fputc(0x80, f);
-	fputc(0x9D, f);
-}
-
-static void print_quote_level_2_begin(FILE* f)
-{
-	fputc(0xE2, f);
-	fputc(0x80, f);
-	fputc(0x98, f);
-}
-
-static void print_quote_level_2_end(FILE* f)
-{
-	fputc(0xE2, f);
-	fputc(0x80, f);
-	fputc(0x99, f);
-}
-
-static void print_char(FILE* f, char c)
+static void print_char_token(file f, char c)
 {
 	switch (c)
 	{
@@ -221,10 +199,10 @@ static void print_char(FILE* f, char c)
 		print_quote_level_2_end(f);
 		break;
 	case text_token_type_left_square_bracket:
-		fputc('[', f);
+		print_char(f, '[');
 		break;
 	case text_token_type_right_square_bracket:
-		fputc(']', f);
+		print_char(f, ']');
 		break;
 	case text_token_type_reference:
 	case text_token_type_strong_end:
@@ -233,11 +211,67 @@ static void print_char(FILE* f, char c)
 	case text_token_type_emphasis_begin:
 		break;
 	default:
-		fputc(c, f);
+		print_char(f, c);
 	}
 }
 
-static void print_simple_text(FILE* f, const char* text)
+static void print_tabs(file f, int depth)
+{
+	print_char(f, '\n');
+	for (int i = 0; i < depth; ++i)
+		print_char(f, '\t');
+}
+
+static void print_en_dash(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x80);
+	print_char(f, 0x93);
+}
+
+static void print_em_dash(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x80);
+	print_char(f, 0x94);
+}
+
+static void print_apostrophe(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x80);
+	print_char(f, 0x99);
+}
+
+static void print_quote_level_1_begin(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x80);
+	print_char(f, 0x9C);
+}
+
+static void print_quote_level_1_end(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x80);
+	print_char(f, 0x9D);
+}
+
+static void print_quote_level_2_begin(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x80);
+	print_char(f, 0x98);
+}
+
+static void print_quote_level_2_end(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x80);
+	print_char(f, 0x99);
+}
+
+static void print_simple_text(file f, const char* text)
 {
 	while (*text)
 		print_char(f, *text++);

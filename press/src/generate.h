@@ -1,6 +1,13 @@
+#define OUTPUT_DIR "press_output"
+static const char output_dir[] = OUTPUT_DIR;
+enum
+{
+	output_len = sizeof(output_dir) - 1
+};
+
 typedef struct
 {
-	FILE*			f;
+	file			f;
 	const document*	doc;
 	int				ref_count;
 	int				chapter_index;

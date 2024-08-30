@@ -1,32 +1,31 @@
 static void create_odt_mimetype(void)
 {
-	FILE* f = open_file(OUTPUT_DIR "/odt/mimetype", file_mode_write);
-	fputs("application/vnd.oasis.opendocument.text", f);
-	fclose(f);
+	file f = open_file(OUTPUT_DIR "/odt/mimetype", file_mode_write);
+	print_str(f, "application/vnd.oasis.opendocument.text");
+	close_file(f);
 }
 
 static void create_odt_meta_inf(void)
 {
-	FILE* f = open_file(OUTPUT_DIR "/odt/META-INF/manifest.xml", file_mode_write);
+	file f = open_file(OUTPUT_DIR "/odt/META-INF/manifest.xml", file_mode_write);
 
-	fputs(
+	print_str(f,
 		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 		"<manifest:manifest xmlns:manifest=\"urn:oasis:names:tc:opendocument:xmlns:manifest:1.0\" manifest:version=\"1.3\">\n"
 		"\t<manifest:file-entry manifest:full-path=\"/\" manifest:version=\"1.3\" manifest:media-type=\"application/vnd.oasis.opendocument.text\"/>\n"
 		"\t<manifest:file-entry manifest:full-path=\"styles.xml\" manifest:media-type=\"text/xml\"/>\n"
 		"\t<manifest:file-entry manifest:full-path=\"content.xml\" manifest:media-type=\"text/xml\"/>\n"
-		"</manifest:manifest>",
-		f
+		"</manifest:manifest>"
 	);
 
-	fclose(f);
+	close_file(f);
 }
 
 static void create_odt_styles(void)
 {
-	FILE* f = open_file(OUTPUT_DIR "/odt/styles.xml", file_mode_write);
+	file f = open_file(OUTPUT_DIR "/odt/styles.xml", file_mode_write);
 
-	fputs(
+	print_str(f,
 		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 		"<office:document-styles xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" office:version=\"1.3\">\n"
 		"\t<office:font-face-decls>\n"
@@ -95,32 +94,31 @@ static void create_odt_styles(void)
 		"\t\t<style:master-page style:name=\"Standard\" style:page-layout-name=\"Letter\"/>\n"
 		"\t\t<style:master-page style:name=\"First_Page\" style:display-name=\"First Page\" style:page-layout-name=\"Letter_Cover\" style:next-style-name=\"Standard\"/>\n"
 		"\t</office:master-styles>\n"
-		"</office:document-styles>",
-		f
+		"</office:document-styles>"
 	);
 
-	fclose(f);
+	close_file(f);
 }
 
-static void print_odt_text_block(FILE* f, const char* text)
+static void print_odt_text_block(file f, const char* text)
 {
 	while (*text)
 	{
 		if (*text == text_token_type_strong_begin)
 		{
-			fputs("<text:span text:style-name=\"Strong\">", f);
+			print_str(f, "<text:span text:style-name=\"Strong\">");
 		}
 		else if (*text == text_token_type_strong_end)
 		{
-			fputs("</text:span>", f);
+			print_str(f, "</text:span>");
 		}
 		else if (*text == text_token_type_emphasis_begin)
 		{
-			fputs("<text:span text:style-name=\"Emphasis\">", f);
+			print_str(f, "<text:span text:style-name=\"Emphasis\">");
 		}
 		else if (*text == text_token_type_emphasis_end)
 		{
-			fputs("</text:span>", f);
+			print_str(f, "</text:span>");
 		}
 		else if (*text == text_token_type_reference)
 		{
@@ -145,19 +143,18 @@ static void print_odt_text_block(FILE* f, const char* text)
 
 static void generate_odt_content(const document* doc)
 {
-	FILE* f = open_file(OUTPUT_DIR "/odt/content.xml", file_mode_write);
+	file f = open_file(OUTPUT_DIR "/odt/content.xml", file_mode_write);
 
 	html_context ctx = {
 		.f		= f,
 		.doc	= doc
 	};
 
-	fputs(
+	print_str(f,
 		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 		"<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" office:version=\"1.3\">\n"
 		"\t<office:body>\n"
-		"\t\t<office:text>",
-		f
+		"\t\t<office:text>"
 	);
 
 //	if (doc->metadata.type == document_type_book)
@@ -233,31 +230,31 @@ static void generate_odt_content(const document* doc)
 				ctx.inline_chapter_ref_count = 0;
 
 				print_tabs(f, depth);
-				fputs("<text:h text:style-name=\"Heading_1\" text:outline-level=\"1\">", f);
+				print_str(f, "<text:h text:style-name=\"Heading_1\" text:outline-level=\"1\">");
 				print_odt_text_block(f, element->text);
-				fprintf(f, "</text:h>");
+				print_str(f, "</text:h>");
 				break;
 			case document_element_type_heading_2:
 				paragraph_count = 0;
 
 				print_tabs(f, depth);
-				fputs("<text:h text:style-name=\"Heading_2\" text:outline-level=\"2\">", f);
+				print_str(f, "<text:h text:style-name=\"Heading_2\" text:outline-level=\"2\">");
 				print_odt_text_block(f, element->text);
-				fprintf(f, "</text:h>");
+				print_str(f, "</text:h>");
 				break;
 			case document_element_type_heading_3:
 				paragraph_count = 0;
 
 				print_tabs(f, depth);
-				fputs("<text:h text:style-name=\"Heading_3\" text:outline-level=\"3\">", f);
+				print_str(f, "<text:h text:style-name=\"Heading_3\" text:outline-level=\"3\">");
 				print_odt_text_block(f, element->text);
-				fprintf(f, "</text:h>");
+				print_str(f, "</text:h>");
 				break;
 			case document_element_type_text_block:
 				print_odt_text_block(f, element->text);
 				break;
 			case document_element_type_line_break:
-				fputs("<text:line-break/>", f);
+				print_str(f, "<text:line-break/>");
 				break;
 			case document_element_type_paragraph_begin:
 				++paragraph_count;
@@ -267,16 +264,16 @@ static void generate_odt_content(const document* doc)
 				if (paragraph_count == 1)
 				{
 					if (inside_blockquote)
-						fputs("<text:p text:style-name=\"Blockquote\">", f);
+						print_str(f, "<text:p text:style-name=\"Blockquote\">");
 					else
-						fputs("<text:p text:style-name=\"First_Paragraph\">", f);
+						print_str(f, "<text:p text:style-name=\"First_Paragraph\">");
 				}
 				else
 				{
 					if (inside_blockquote)
-						fputs("<text:p text:style-name=\"Blockquote_Indent\">", f);
+						print_str(f, "<text:p text:style-name=\"Blockquote_Indent\">");
 					else
-						fputs("<text:p text:style-name=\"Indent_Paragraph\">", f);
+						print_str(f, "<text:p text:style-name=\"Indent_Paragraph\">");
 				}
 
 				break;
@@ -286,13 +283,13 @@ static void generate_odt_content(const document* doc)
 				print_tabs(f, depth);
 
 				if (inside_blockquote)
-					fputs("<text:p text:style-name=\"Blockquote\">", f);
+					print_str(f, "<text:p text:style-name=\"Blockquote\">");
 				else
-					fputs("<text:p text:style-name=\"First_Paragraph\">", f);
+					print_str(f, "<text:p text:style-name=\"First_Paragraph\">");
 
 				break;
 			case document_element_type_paragraph_end:
-				fputs("</text:p>", f);
+				print_str(f, "</text:p>");
 				break;
 			case document_element_type_blockquote_begin:
 				paragraph_count = 0;
@@ -304,10 +301,10 @@ static void generate_odt_content(const document* doc)
 				break;
 			case document_element_type_blockquote_citation:
 				print_tabs(f, depth);
-				fputs("<text:p text:style-name=\"Blockquote_Reference\">", f);
+				print_str(f, "<text:p text:style-name=\"Blockquote_Reference\">");
 				print_em_dash(f);
 				print_odt_text_block(f, element->text);
-				fputs("</text:p>", f);
+				print_str(f, "</text:p>");
 				break;
 //			case document_element_type_ordered_list_begin_roman:
 //				print_tabs(f, depth++);
@@ -356,15 +353,9 @@ static void generate_odt_content(const document* doc)
 //		}
 	}
 
-	fputs(
-		"\n"
-		"\t\t</office:text>\n"
-		"\t</office:body>\n"
-		"</office:document-content>",
-		f
-	);
+	print_str(f, "\n\t\t</office:text>\n\t</office:body>\n</office:document-content>");
 
-	fclose(f);
+	close_file(f);
 }
 
 static void generate_odt(const document* doc)

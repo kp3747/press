@@ -96,7 +96,7 @@ static void generate_zip(const char* filepath, const char** input_files, const c
 		filename_lengths[i] = (uint16_t)strlen(output_files[i]);
 
 	// Open files and cache sizes
-	FILE** file_handles = mem_alloc(sizeof(FILE*) * count);
+	file* file_handles = mem_alloc(sizeof(FILE*) * count);
 	uint32_t* file_sizes = mem_alloc(sizeof(uint32_t) * count);
 	for (uint32_t i = 0; i < count; ++i)
 	{
@@ -163,7 +163,7 @@ static void generate_zip(const char* filepath, const char** input_files, const c
 		current_data += filename_lengths[i];
 
 		// Read file and calculate CRC32 from memory
-		fread(current_data, 1, file_sizes[i], file_handles[i]);
+		read_file(file_handles[i], current_data, file_sizes[i]);
 		const uint32_t crc = crc32_compute_buffer(0, current_data, file_sizes[i]);
 		current_data += file_sizes[i];
 
@@ -207,12 +207,12 @@ static void generate_zip(const char* filepath, const char** input_files, const c
 	}
 
 	for (uint32_t i = 0; i < count; ++i)
-		fclose(file_handles[i]);
+		close_file(file_handles[i]);
 
 	// Write out entire file
-	FILE* zip_file = open_file(filepath, file_mode_write);
-	fwrite(zip_data, zip_size, 1, zip_file);
-	fclose(zip_file);
+	file zip_file = open_file(filepath, file_mode_write);
+	write_file(zip_file, zip_data, zip_size);
+	close_file(zip_file);
 
 	mem_pop(frame);
 }

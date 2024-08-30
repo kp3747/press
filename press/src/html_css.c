@@ -1,7 +1,7 @@
 static void output_css(html_context* ctx)
 {
 	// Default universal settings
-	fputs(
+	print_str(ctx->f,
 		// This adds support for light and dark modes based on browser settings
 		":root {\n"
 		"	color-scheme: light dark;\n"
@@ -180,6 +180,5 @@ static void output_css(html_context* ctx)
 		"	display: block;\n"
 		"	text-align:center;\n"
 		"}\n"
-		,ctx->f
 	);
 }
