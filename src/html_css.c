@@ -180,7 +180,6 @@ static void output_css(html_context* ctx)
 		"	display: block;\n"
 		"	text-align:center;\n"
 		"}\n"
-		,
-		ctx->f
+		,ctx->f
 	);
 }

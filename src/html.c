@@ -127,8 +127,8 @@ static void generate_html(const document* doc)
 		"<html lang=\"en-GB\">\n"
 		"	<head>\n"
 		"		<meta charset=\"UTF-8\">\n"
-		"		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n",
-		f
+		"		<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n"
+		,f
 	);
 
 	if (doc->metadata.title)
@@ -142,12 +142,7 @@ static void generate_html(const document* doc)
 	fputs("\t\t<style>\n", f);
 	static void output_css(html_context* ctx);
 	output_css(&ctx);
-	fputs(
-		"\t\t</style>\n"
-		"\t</head>\n"
-		"\t<body>",
-		f
-	);
+	fputs("\t\t</style>\n\t</head>\n\t<body>", f);
 
 	if (doc->metadata.type == document_type_book)
 	{
@@ -156,48 +151,40 @@ static void generate_html(const document* doc)
 
 		if (doc->metadata.author_count)
 		{
-			fprintf(f, "\n\t\t<p class=\"authors\">");
+			fputs("\n\t\t<p class=\"authors\">", f);
 
 			for (uint32_t i = 0; i < doc->metadata.author_count - 1; ++i)
 				fprintf(f, "\n\t\t\t%s<br>", doc->metadata.authors[i]);
 			fprintf(f, "\n\t\t\t%s", doc->metadata.authors[doc->metadata.author_count - 1]);
 
-			fprintf(f, "\n\t\t</p>");
+			fputs("\n\t\t</p>", f);
 		}
 
 		if (doc->metadata.translator_count)
 		{
-			fprintf(f, "\n\t\t<p class=\"authors\">");
-			fprintf(f, "\n\t\t\tTranslated by:<br>");
+			fputs("\n\t\t<p class=\"authors\">\n\t\t\tTranslated by:<br>", f);
 
 			for (uint32_t i = 0; i < doc->metadata.translator_count - 1; ++i)
 				fprintf(f, "\n\t\t\t%s<br>", doc->metadata.translators[i]);
 			fprintf(f, "\n\t\t\t%s", doc->metadata.translators[doc->metadata.translator_count - 1]);
 
-			fprintf(f, "\n\t\t</p>");
+			fputs("\n\t\t</p>", f);
 		}
 
 		if (doc->chapter_count > 1)
 		{
-			fprintf(f,
-				"\n\t\t<h1>Contents</h1>\n"
-				"\t\t<p>\n"
-				"\t\t\t<ul class=\"chapters\">\n"
-			);
+			fputs("\n\t\t<h1>Contents</h1>\n\t\t<ul class=\"chapters\">\n", f);
 
 			for (uint32_t chapter_index = 0; chapter_index < doc->chapter_count; ++chapter_index)
 			{
 				document_element* heading = doc->chapters[chapter_index].elements;
 
-				fprintf(f, "\t\t\t\t<li><a href=\"#h%d\">", chapter_index + 1);
-				print_simple_text(ctx.f, heading->text);
-				fprintf(f, "</a></li>\n");
+				fprintf(f, "\t\t\t<li><a href=\"#h%d\">", chapter_index + 1);
+				print_simple_text(f, heading->text);
+				fputs("</a></li>\n", f);
 			}
 
-			fprintf(f,
-				"\t\t\t</ul>\n"
-				"\t\t</p>"
-			);
+			fputs("\t\t</ul>", f);
 		}
 	}
 
