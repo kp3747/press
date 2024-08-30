@@ -96,7 +96,7 @@ static void generate_zip(const char* filepath, const char** input_files, const c
 		filename_lengths[i] = (uint16_t)strlen(output_files[i]);
 
 	// Open files and cache sizes
-	file* file_handles = mem_alloc(sizeof(FILE*) * count);
+	file* file_handles = mem_alloc(sizeof(file) * count);
 	uint32_t* file_sizes = mem_alloc(sizeof(uint32_t) * count);
 	for (uint32_t i = 0; i < count; ++i)
 	{

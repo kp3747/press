@@ -1,11 +1,10 @@
 #include "../../parse/include/parse.h"
 
-// TODO: Move to the end of the file, or better yet compile as another module
-#include "../../parse/lib/unity_parse.c"
-
 #include "../src/generate.h"
 
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "../src/odt.c"
 #include "../src/html.c"
@@ -14,4 +13,7 @@
 #include "../src/zip.c"
 #include "../src/crc32.c"
 
+#include "../../parse/lib/unity_parse.c"
+
+#include <windows.h>
 #include "../src/main.c"
