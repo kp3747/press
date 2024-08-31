@@ -1,9 +1,9 @@
-static void print_str(file f, const char* s)
+void print_str(file f, const char* s)
 {
 	fputs(s, f.f);
 }
 
-static void print_fmt(file f, const char* format, ...)
+void print_fmt(file f, const char* format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -11,12 +11,12 @@ static void print_fmt(file f, const char* format, ...)
 	va_end(args);
 }
 
-static void print_char(file f, char c)
+void print_char(file f, char c)
 {
 	fputc(c, f.f);
 }
 
-static void print_char_token(file f, char c)
+void print_char_token(file f, char c)
 {
 	switch (c)
 	{
@@ -58,63 +58,63 @@ static void print_char_token(file f, char c)
 	}
 }
 
-static void print_tabs(file f, int depth)
+void print_tabs(file f, int depth)
 {
 	print_char(f, '\n');
 	for (int i = 0; i < depth; ++i)
 		print_char(f, '\t');
 }
 
-static void print_en_dash(file f)
+void print_en_dash(file f)
 {
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x93);
 }
 
-static void print_em_dash(file f)
+void print_em_dash(file f)
 {
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x94);
 }
 
-static void print_apostrophe(file f)
+void print_apostrophe(file f)
 {
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x99);
 }
 
-static void print_quote_level_1_begin(file f)
+void print_quote_level_1_begin(file f)
 {
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x9C);
 }
 
-static void print_quote_level_1_end(file f)
+void print_quote_level_1_end(file f)
 {
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x9D);
 }
 
-static void print_quote_level_2_begin(file f)
+void print_quote_level_2_begin(file f)
 {
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x98);
 }
 
-static void print_quote_level_2_end(file f)
+void print_quote_level_2_end(file f)
 {
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x99);
 }
 
-static void print_simple_text(file f, const char* text)
+void print_simple_text(file f, const char* text)
 {
 	while (*text)
 		print_char(f, *text++);

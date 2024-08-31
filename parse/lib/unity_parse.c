@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../src/parse.c"
 #include "../src/roman_numeral.c"
 #include "../src/validate.c"
 #include "../src/finalise.c"

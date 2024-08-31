@@ -156,24 +156,15 @@ int main(int argc, const char** argv)
 
 		printf("Processing \"%s\"\n", filepaths[i]);
 
-		char* text = load_file(filepaths[i]);
+		document doc;
+		parse(filepaths[i], &doc);
 
-		document doc = {};
-
-		line_tokens tokens;
-		tokenise(text, &tokens, &doc.metadata);
+		if (!doc.metadata.title)
+			doc.metadata.title = copy_filename(filepaths[i]);
 
 		// Default to article to allow small documents without any metadata
 		if (doc.metadata.type == document_type_none)
 			doc.metadata.type = document_type_article;
-
-		doc_mem_req mem_req;
-		validate(&tokens, &mem_req);
-
-		finalise(&tokens, &mem_req, &doc);
-
-		if (!doc.metadata.title)
-			doc.metadata.title = copy_filename(filepaths[i]);
 
 		if (generate)
 		{

@@ -2,12 +2,12 @@ static char				error_buffer[4096];
 static uint32_t			error_buffer_pos;
 static error_callback	error_handler;
 
-static void install_error_handler(error_callback handler)
+void install_error_handler(error_callback handler)
 {
 	error_handler = handler;
 }
 
-static void handle_error(const char* format, ...)
+void handle_error(const char* format, ...)
 {
 	fputs("Error: ", stderr);
 
@@ -22,7 +22,7 @@ static void handle_error(const char* format, ...)
 	exit(EXIT_FAILURE);
 }
 
-static void exit_failure(void)
+void exit_failure(void)
 {
 	fputs(error_buffer, stderr);
 
@@ -36,7 +36,7 @@ static void exit_failure(void)
 	exit(EXIT_FAILURE);
 }
 
-static void print_error(const char* format, ...)
+void print_error(const char* format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -44,13 +44,13 @@ static void print_error(const char* format, ...)
 	va_end(args);
 }
 
-static void print_error_char(char c)
+void print_error_char(char c)
 {
 	if (error_buffer_pos < sizeof(error_buffer) - 1)
 		error_buffer[error_buffer_pos++] = c;
 }
 
-static void print_error_vargs(const char* format, va_list args)
+void print_error_vargs(const char* format, va_list args)
 {
 	const int len = vsnprintf(error_buffer + error_buffer_pos, sizeof(error_buffer) - error_buffer_pos, format, args);
 	error_buffer_pos += len;

@@ -74,14 +74,14 @@ void* mem_alloc(int64_t size)
 	return ptr;
 }
 
-static void create_dir(const char* dir)
+void create_dir(const char* dir)
 {
 	const BOOL result = CreateDirectoryA(dir, nullptr);
 	if (!result)
 		handle_error("Unable to create directory \"%s\". Do you have a previously generated file open?", dir);
 }
 
-static void delete_dir(const char* dir)
+void delete_dir(const char* dir)
 {
 	void* frame = mem_push();
 

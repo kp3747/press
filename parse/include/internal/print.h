@@ -1,0 +1,13 @@
+void print_str(file f, const char* s);
+void print_fmt(file f, const char* format, ...);
+void print_char(file f, char c);
+void print_char_token(file f, char c);
+void print_tabs(file f, int depth);
+void print_en_dash(file f);
+void print_em_dash(file f);
+void print_apostrophe(file f);
+void print_quote_level_1_begin(file f);
+void print_quote_level_1_end(file f);
+void print_quote_level_2_begin(file f);
+void print_quote_level_2_end(file f);
+void print_simple_text(file f, const char* text);
