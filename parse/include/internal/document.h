@@ -7,7 +7,7 @@ typedef enum
 	text_token_type_null					= 0,
 	text_token_type_en_dash					= 1,
 	text_token_type_em_dash					= 2,
-	text_token_type_reference				= 3,
+	text_token_type_note					= 3,
 	text_token_type_strong_end				= 4,
 	text_token_type_emphasis_end			= 5,
 	text_token_type_preformatted			= 6,
@@ -84,14 +84,14 @@ typedef struct
 {
 	document_element*	elements;
 	uint32_t			element_count;
-} document_reference;
+} document_note;
 
 typedef struct
 {
 	document_element*	elements;
-	document_reference*	references;
+	document_note*		notes;
 	uint32_t			element_count;
-	uint32_t			reference_count;
+	uint32_t			note_count;
 } document_chapter;
 
 typedef struct

@@ -69,7 +69,7 @@ static void create_odt_styles(void)
 		"\t\t<style:style style:name=\"Blockquote_Indent\" style:family=\"paragraph\" style:parent-style-name=\"Blockquote\">\n"
 		"\t\t\t<style:paragraph-properties fo:margin-top=\"0.0cm\" fo:text-indent=\"0.5cm\"/>\n"
 		"\t\t</style:style>\n"
-		"\t\t<style:style style:name=\"Blockquote_Reference\" style:display-name=\"Blockquote Reference\" style:family=\"paragraph\" style:parent-style-name=\"Blockquote\">\n"
+		"\t\t<style:style style:name=\"Blockquote_Citation\" style:display-name=\"Blockquote Citation\" style:family=\"paragraph\" style:parent-style-name=\"Blockquote\">\n"
 		"\t\t\t<style:paragraph-properties fo:margin-top=\"0.25cm\" fo:keep-with-next=\"auto\"/>\n"
 		"\t\t</style:style>\n"
 		"\t\t<style:style style:name=\"Emphasis\" style:family=\"text\">\n"
@@ -120,7 +120,7 @@ static void print_odt_text_block(file f, const char* text)
 		{
 			print_str(f, "</text:span>");
 		}
-		else if (*text == text_token_type_reference)
+		else if (*text == text_token_type_note)
 		{
 //			const uint32_t ref_count = ctx->inline_ref_count++ + 1;
 //			const uint32_t chapter_ref_count = ctx->inline_chapter_ref_count++;
@@ -226,8 +226,8 @@ static void generate_odt_content(const document* doc)
 			{
 			case document_element_type_heading_1:
 				paragraph_count = 0;
-				ctx.chapter_ref_count = 0;
-				ctx.inline_chapter_ref_count = 0;
+				ctx.chapter_note_count = 0;
+				ctx.inline_chapter_note_count = 0;
 
 				print_tabs(f, depth);
 				print_str(f, "<text:h text:style-name=\"Heading_1\" text:outline-level=\"1\">");
@@ -301,7 +301,7 @@ static void generate_odt_content(const document* doc)
 				break;
 			case document_element_type_blockquote_citation:
 				print_tabs(f, depth);
-				print_str(f, "<text:p text:style-name=\"Blockquote_Reference\">");
+				print_str(f, "<text:p text:style-name=\"Blockquote_Citation\">");
 				print_em_dash(f);
 				print_odt_text_block(f, element->text);
 				print_str(f, "</text:p>");

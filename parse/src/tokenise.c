@@ -495,12 +495,12 @@ static char tokenise_text(tokenise_context* ctx, char c)
 			if (c >= '0' && c <= '9')
 			{
 				const uint32_t index = arabic_to_int_new(ctx, &ctx->peek, c, ']');
-				++ctx->ref_count;
+				++ctx->note_count;
 
-				if (index != ctx->ref_count)
-					handle_tokenise_error(ctx, "Expected reference number %d.", ctx->ref_count);
+				if (index != ctx->note_count)
+					handle_tokenise_error(ctx, "Expected note number %d.", ctx->note_count);
 
-				put_text_token(ctx, text_token_type_reference);
+				put_text_token(ctx, text_token_type_note);
 			}
 			else
 			{
@@ -569,7 +569,7 @@ static char tokenise_heading(tokenise_context* ctx, char c)
 	} while (c == '#');
 
 	if (depth == 0)
-		ctx->ref_count = 0;
+		ctx->note_count = 0;
 	else if (depth > 2)
 		handle_tokenise_error(ctx, "Exceeded maximum heading depth of 3.");
 
@@ -757,25 +757,25 @@ static char tokenise_bracket(tokenise_context* ctx, char c)
 	}
 	else if (c == '0')
 	{
-		handle_tokenise_error(ctx, "References must begin from 1.");
+		handle_tokenise_error(ctx, "Notes must begin from 1.");
 	}
 	else if (c >= '1' && c <= '9')
 	{
 		const uint32_t index = arabic_to_int_new(ctx, &ctx->peek, c, ']');
 
-		line_token* line = add_line_token(ctx, line_token_type_reference);
+		line_token* line = add_line_token(ctx, line_token_type_note);
 		line->index = index;
 
 		c = get_char(ctx);
 		if (c != ' ')
-			handle_tokenise_error(ctx, "References must be followed by a space.");
+			handle_tokenise_error(ctx, "Notes must be followed by a space.");
 
 		c = tokenise_text(ctx, get_char(ctx));
 
 	}
 	else
 	{
-		handle_tokenise_error(ctx, "References must contain arabic numerals.");
+		handle_tokenise_error(ctx, "Notes must contain arabic numerals.");
 	}
 
 	return c;

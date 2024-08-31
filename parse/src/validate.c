@@ -6,8 +6,8 @@ typedef struct
 	uint32_t	token_count;
 	uint32_t	chapter_count;
 	uint32_t	element_count;
-	uint32_t	reference_count;
-	uint32_t	reference_element_count;
+	uint32_t	note_count;
+	uint32_t	note_element_count;
 } validate_context;
 
 static void handle_validate_error(validate_context* ctx, const char* format, ...)
@@ -84,14 +84,14 @@ static line_token* validate_heading(validate_context* ctx, line_token* token)
 	return token;
 }
 
-static line_token* validate_reference(validate_context* ctx, line_token* token)
+static line_token* validate_note(validate_context* ctx, line_token* token)
 {
-	++ctx->reference_count;
-	ctx->reference_element_count += 3;
+	++ctx->note_count;
+	ctx->note_element_count += 3;
 
 	token = validate_get_next_token(ctx);
 	if (token->type != line_token_type_newline)
-		handle_validate_error(ctx, "References must be followed by a blank line.");
+		handle_validate_error(ctx, "Notes must be followed by a blank line.");
 
 	token = validate_get_next_token(ctx);
 	for (;;)
@@ -104,7 +104,7 @@ static line_token* validate_reference(validate_context* ctx, line_token* token)
 			handle_validate_error(ctx, "Notes may not dinkuses \"* * *\".");
 			break;
 		case line_token_type_paragraph:
-			token = validate_paragraph(ctx, token, &ctx->reference_element_count);
+			token = validate_paragraph(ctx, token, &ctx->note_element_count);
 			break;
 		case line_token_type_heading_2:
 		case line_token_type_heading_3:
@@ -126,8 +126,8 @@ static line_token* validate_reference(validate_context* ctx, line_token* token)
 			handle_validate_error(ctx, "Notes may not currently contain lists.");
 			break;
 		// End conditions
+		case line_token_type_note:
 		case line_token_type_heading_1:
-		case line_token_type_reference:
 			return token;
 		default:
 			token = validate_get_next_token(ctx);
@@ -304,8 +304,8 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 		case line_token_type_eof:
 			out_mem_req->chapter_count = ctx.chapter_count;
 			out_mem_req->element_count = ctx.element_count;
-			out_mem_req->reference_count = ctx.reference_count;
-			out_mem_req->reference_element_count = ctx.reference_element_count;
+			out_mem_req->note_count = ctx.note_count;
+			out_mem_req->note_element_count = ctx.note_element_count;
 			return;
 		case line_token_type_dinkus:
 			token = validate_dinkus(&ctx);
@@ -318,8 +318,8 @@ static void validate(line_tokens* tokens, doc_mem_req* out_mem_req)
 		case line_token_type_heading_3:
 			token = validate_heading(&ctx, token);
 			break;
-		case line_token_type_reference:
-			token = validate_reference(&ctx, token);
+		case line_token_type_note:
+			token = validate_note(&ctx, token);
 			break;
 		case line_token_type_preformatted:
 			token = validate_preformatted(&ctx, token);

@@ -9,11 +9,11 @@ typedef struct
 {
 	file			f;
 	const document*	doc;
-	int				ref_count;
+	int				note_count;
 	int				chapter_index;
-	int				inline_ref_count;
-	int				chapter_ref_count;
-	int				inline_chapter_ref_count;
+	int				inline_note_count;
+	int				chapter_note_count;
+	int				inline_chapter_note_count;
 } html_context;
 
 static void print_html_text_block(html_context* ctx, const char* text);

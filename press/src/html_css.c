@@ -38,7 +38,7 @@ static void output_css(html_context* ctx)
 
 		// Superscript
 		"sup {\n"
-		"	line-height: 0;\n"		// Prevent references from increasing line height
+		"	line-height: 0;\n"		// Prevent notes from increasing line height
 		"	font-size: 0.75em;\n"
 		"}\n\n"
 

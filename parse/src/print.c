@@ -47,7 +47,7 @@ void print_char_token(file f, char c)
 	case text_token_type_right_square_bracket:
 		print_char(f, ']');
 		break;
-	case text_token_type_reference:
+	case text_token_type_note:
 	case text_token_type_strong_end:
 	case text_token_type_emphasis_end:
 	case text_token_type_strong_begin:

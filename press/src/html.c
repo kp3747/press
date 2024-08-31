@@ -18,20 +18,20 @@ static void print_html_text_block(html_context* ctx, const char* text)
 		{
 			print_str(ctx->f, "</em>");
 		}
-		else if (*text == text_token_type_reference)
+		else if (*text == text_token_type_note)
 		{
-			const uint32_t ref_count = ctx->inline_ref_count++ + 1;
-			const uint32_t chapter_ref_count = ctx->inline_chapter_ref_count++;
+			const uint32_t note_count = ctx->inline_note_count++ + 1;
+			const uint32_t chapter_note_count = ctx->inline_chapter_note_count++;
 
 			const document_chapter* chapter = &ctx->doc->chapters[ctx->chapter_index];
-			const document_reference* reference = &chapter->references[chapter_ref_count];
+			const document_note* note = &chapter->notes[chapter_note_count];
 
-			print_fmt(ctx->f, "<sup><a id=\"ref-return%d\" href=\"#ref%d\" title=\"", ref_count, ref_count);
+			print_fmt(ctx->f, "<sup><a id=\"note-return%d\" href=\"#note%d\" title=\"", note_count, note_count);
 
 			int begin_count = 0;
-			for (uint32_t element_index = 0; element_index < reference->element_count; ++element_index)
+			for (uint32_t element_index = 0; element_index < note->element_count; ++element_index)
 			{
-				document_element* element = &reference->elements[element_index];
+				document_element* element = &note->elements[element_index];
 
 				if (element->type == document_element_type_text_block)
 				{
@@ -45,7 +45,7 @@ static void print_html_text_block(html_context* ctx, const char* text)
 				}
 			}
 
-			print_fmt(ctx->f, "\">[%d]</a></sup>", chapter_ref_count + 1);
+			print_fmt(ctx->f, "\">[%d]</a></sup>", chapter_note_count + 1);
 		}
 		else
 		{
@@ -205,8 +205,8 @@ static void generate_html(const document* doc)
 				print_str(f, "<hr>");
 				break;
 			case document_element_type_heading_1:
-				ctx.chapter_ref_count = 0;
-				ctx.inline_chapter_ref_count = 0;
+				ctx.chapter_note_count = 0;
+				ctx.inline_chapter_note_count = 0;
 
 				print_tabs(f, depth);
 				if (doc->metadata.type == document_type_book)
@@ -297,18 +297,18 @@ static void generate_html(const document* doc)
 			}
 		}
 
-		if (chapter->reference_count > 0)
+		if (chapter->note_count > 0)
 		{
-			for (uint32_t reference_index = 0; reference_index < chapter->reference_count; ++reference_index)
+			for (uint32_t note_index = 0; note_index < chapter->note_count; ++note_index)
 			{
-				++ctx.ref_count;
-				++ctx.chapter_ref_count;
+				++ctx.note_count;
+				++ctx.chapter_note_count;
 
-				document_reference* reference = &chapter->references[reference_index];
+				document_note* note = &chapter->notes[note_index];
 
-				for (uint32_t element_index = 0; element_index < reference->element_count; ++element_index)
+				for (uint32_t element_index = 0; element_index < note->element_count; ++element_index)
 				{
-					document_element* element = &reference->elements[element_index];
+					document_element* element = &note->elements[element_index];
 
 					switch (element->type)
 					{
@@ -322,8 +322,8 @@ static void generate_html(const document* doc)
 						print_tabs(f, depth);
 						if (element_index == 0)
 						{
-							print_fmt(f, "<p class=\"footnote\" id=\"ref%d\">", ctx.ref_count);
-							print_fmt(f, "[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
+							print_fmt(f, "<p class=\"footnote\" id=\"note%d\">", ctx.note_count);
+							print_fmt(f, "[<a href=\"#note-return%d\">%d</a>] ", ctx.note_count, ctx.chapter_note_count);
 						}
 						else
 						{

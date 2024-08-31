@@ -18,7 +18,7 @@ typedef struct
 	line_token*			current_line;
 	line_token*			lines;
 	uint32_t			line_count;
-	uint32_t			ref_count;
+	uint32_t			note_count;
 	peek_state			peek;
 	document_metadata*	metadata;
 	const char*			authors;

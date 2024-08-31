@@ -352,8 +352,8 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 			print_str(f, "<div class=\"dinkus\">* * *</div>");
 			break;
 		case document_element_type_heading_1:
-			ctx.chapter_ref_count = 0;
-			ctx.inline_chapter_ref_count = 0;
+			ctx.chapter_note_count = 0;
+			ctx.inline_chapter_note_count = 0;
 
 			print_tabs(f, depth);
 			print_str(f, "<h1>");
@@ -443,18 +443,18 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 		}
 	}
 
-	if (chapter->reference_count > 0)
+	if (chapter->note_count > 0)
 	{
-		for (uint32_t reference_index = 0; reference_index < chapter->reference_count; ++reference_index)
+		for (uint32_t note_index = 0; note_index < chapter->note_count; ++note_index)
 		{
-			++ctx.ref_count;
-			++ctx.chapter_ref_count;
+			++ctx.note_count;
+			++ctx.chapter_note_count;
 
-			document_reference* reference = &chapter->references[reference_index];
+			document_note* note = &chapter->notes[note_index];
 
-			for (uint32_t element_index = 0; element_index < reference->element_count; ++element_index)
+			for (uint32_t element_index = 0; element_index < note->element_count; ++element_index)
 			{
-				document_element* element = &reference->elements[element_index];
+				document_element* element = &note->elements[element_index];
 
 				switch (element->type)
 				{
@@ -468,8 +468,8 @@ static void create_epub_chapter(const document* doc, uint32_t index)
 					print_tabs(f, depth);
 					if (element_index == 0)
 					{
-						print_fmt(f, "\n\t\t<p class=\"footnote\" id=\"ref%d\">\n", ctx.ref_count);
-						print_fmt(f, "\t\t\t[<a href=\"#ref-return%d\">%d</a>] ", ctx.ref_count, ctx.chapter_ref_count);
+						print_fmt(f, "\n\t\t<p class=\"footnote\" id=\"note%d\">\n", ctx.note_count);
+						print_fmt(f, "\t\t\t[<a href=\"#note-return%d\">%d</a>] ", ctx.note_count, ctx.chapter_note_count);
 					}
 					else
 					{
