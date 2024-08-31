@@ -90,6 +90,15 @@ These paragraphs
 are separated by a paragraph break.
 ```
 
+## Right-aligned Paragraphs
+
+Right-aligned paragraphs begin with the greater-than symbol followed by a space. Note that this syntax differs from Markdown where this would produce a block quote.
+
+```
+> This text is
+> right aligned.
+```
+
 ## Lists
 
 There are two types of lists, ordered and unordered. Both must be placed at the beginning of a line surrounded by black lines.
