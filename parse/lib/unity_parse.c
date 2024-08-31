@@ -21,6 +21,7 @@
 #include "../src/tokenise.c"
 
 #if defined(_MSC_VER)
+	#include <windows.h>
 	#include "../src/os_win.c"
 #else
 	#error Unsupported platform

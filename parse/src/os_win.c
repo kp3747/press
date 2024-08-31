@@ -1,12 +1,7 @@
-#include <windows.h>
-
-enum
-{
-	page_size = 4 << 10,
-	vmem_size = 64 << 20
-};
-static_assert((page_size & (page_size - 1)) == 0); // Ensure power of two
-static_assert(vmem_size % page_size == 0); // Ensure multiple of page size
+#define PAGE_SIZE (INT64_C(4) << 10)
+#define VMEM_SIZE (INT64_C(64) << 20)
+static_assert((PAGE_SIZE & (PAGE_SIZE - 1)) == 0); // Ensure power of two
+static_assert(VMEM_SIZE % PAGE_SIZE == 0); // Ensure multiple of page size
 
 static uint8_t* mem_begin;
 static uint8_t* mem_current;
@@ -14,7 +9,7 @@ static uint8_t* mem_mapped;
 
 static uint8_t* mem_align_page(uint8_t* ptr)
 {
-	return (uint8_t*)(((uint64_t)ptr + (page_size - 1)) & ~(page_size - 1));
+	return (uint8_t*)(((uint64_t)ptr + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1));
 }
 
 static int64_t mem_align_size(int64_t size)
@@ -25,9 +20,9 @@ static int64_t mem_align_size(int64_t size)
 
 void mem_init(void)
 {
-	mem_begin = mem_current = mem_mapped = VirtualAlloc(nullptr, vmem_size, MEM_RESERVE, PAGE_READWRITE);
+	mem_begin = mem_current = mem_mapped = VirtualAlloc(nullptr, VMEM_SIZE, MEM_RESERVE, PAGE_READWRITE);
 	if (!mem_current)
-		print_error("Unable to reserve %d MiB virtual memory.", vmem_size);
+		print_error("Unable to reserve %d MiB virtual memory.", VMEM_SIZE);
 }
 
 void mem_term(void)
@@ -60,13 +55,13 @@ void* mem_alloc(int64_t size)
 		uint8_t* current_mapped = mem_mapped;
 		mem_mapped = mem_align_page(next);
 
-		if (mem_mapped - mem_begin > vmem_size)
-			print_error("Reserved memory of size %d MiB exceeded. Please contact developer.", vmem_size);
+		if (mem_mapped - mem_begin > VMEM_SIZE)
+			print_error("Reserved memory of size %d MiB exceeded. Please contact developer.", VMEM_SIZE);
 
 		const int64_t map_size = mem_mapped - current_mapped;
 		current_mapped = VirtualAlloc(current_mapped, map_size, MEM_COMMIT, PAGE_READWRITE);
 		if (!current_mapped)
-			print_error("Out of memory.", vmem_size);
+			print_error("Out of memory.", VMEM_SIZE);
 	}
 
 	mem_current = next;
@@ -102,3 +97,6 @@ void delete_dir(const char* dir)
 
 	mem_pop(frame);
 }
+
+#undef PAGE_SIZE
+#undef VMEM_SIZE
