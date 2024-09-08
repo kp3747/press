@@ -49,7 +49,7 @@ static void print_html_text_block(html_context* ctx, const char* text)
 		}
 		else
 		{
-			print_char(ctx->f, *text);
+			print_char_token(ctx->f, *text);
 		}
 
 		++text;
