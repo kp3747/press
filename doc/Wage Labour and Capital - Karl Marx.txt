@@ -5,6 +5,7 @@
 	* http://burawoy.berkeley.edu/Reader.101/M&E.II.pdf
 	* https://www.marxists.org/archive/marx/works/1847/wage-labour/
 	* https://people.wku.edu/steve.groce/MarxLaborandCapital.pdf
+	* https://michaelharrison.org.uk/wp-content/uploads/2022/04/Wage-Labour-and-Capital-and-Value-Price-and-Profit-Karl-Marx-1.pdf
 */
 
 {Type:		Book}
