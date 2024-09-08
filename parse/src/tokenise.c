@@ -389,26 +389,29 @@ static bool check_emphasis(tokenise_context* ctx, char c, emphasis_state* state)
 
 static bool check_dash(tokenise_context* ctx, char c)
 {
-	peek_state peek;
-	peek_init(ctx, &peek);
-
-	if (c == '-' && peek_char(ctx, &peek) == '-')
+	if (c == '-')
 	{
+		peek_state peek;
+		peek_init(ctx, &peek);
+
 		if (peek_char(ctx, &peek) == '-')
 		{
-			peek_apply(ctx, &peek);
-			put_text_token(ctx, text_token_type_em_dash);
-
 			if (peek_char(ctx, &peek) == '-')
-				handle_peek_error(&peek, "Too many hyphens.");
-		}
-		else
-		{
-			get_char(ctx);
-			put_text_token(ctx, text_token_type_en_dash);
-		}
+			{
+				peek_apply(ctx, &peek);
+				put_text_token(ctx, text_token_type_em_dash);
 
-		return true;
+				if (peek_char(ctx, &peek) == '-')
+					handle_peek_error(&peek, "Too many hyphens.");
+			}
+			else
+			{
+				get_char(ctx);
+				put_text_token(ctx, text_token_type_en_dash);
+			}
+
+			return true;
+		}
 	}
 
 	return false;
