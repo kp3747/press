@@ -547,6 +547,10 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		else if (check_fraction_slash(ctx, c))
 		{
 		}
+		else if (c == '_')
+		{
+			put_text_token(ctx, text_token_type_joiner);
+		}
 		else if (check_newline(ctx, c, char_count))
 		{
 			break;

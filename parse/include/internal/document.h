@@ -21,7 +21,8 @@ typedef enum
 	text_token_type_quote_level_2_end		= 14,
 	text_token_type_left_square_bracket		= 15,
 	text_token_type_right_square_bracket	= 16,
-	text_token_type_fraction_slash			= 17
+	text_token_type_fraction_slash			= 17,
+	text_token_type_joiner					= 18
 } text_token_type;
 
 typedef enum

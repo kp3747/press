@@ -6,6 +6,7 @@ void print_tabs(file f, int depth);
 void print_en_dash(file f);
 void print_em_dash(file f);
 void print_apostrophe(file f);
+void print_joiner(file f);
 void print_fraction_slash(file f);
 void print_quote_level_1_begin(file f);
 void print_quote_level_1_end(file f);
