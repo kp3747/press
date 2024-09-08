@@ -417,6 +417,28 @@ static bool check_dash(tokenise_context* ctx, char c)
 	return false;
 }
 
+static bool check_fraction_slash(tokenise_context* ctx, char c)
+{
+	if (c == '/')
+	{
+		peek_state peek;
+		peek_init(ctx, &peek);
+
+		if (peek_char(ctx, &peek) == '/')
+		{
+			peek_apply(ctx, &peek);
+			put_text_token(ctx, text_token_type_fraction_slash);
+
+			if (peek_char(ctx, &peek) == '/')
+				handle_peek_error(&peek, "Too many slashes.");
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool check_newline(tokenise_context* ctx, char c, int char_count)
 {
 	if (c == '\n')
@@ -450,6 +472,8 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		if (c == '\\')
 		{
 			c = get_char(ctx);
+
+			// TODO: Why not just put '[' and ']' text directly? They aren't special chars.
 			if (c == '[')
 				put_text_token(ctx, text_token_type_left_square_bracket);
 			else if (c == ']')
@@ -518,6 +542,9 @@ static char tokenise_text(tokenise_context* ctx, char c)
 		{
 		}
 		else if (check_dash(ctx, c))
+		{
+		}
+		else if (check_fraction_slash(ctx, c))
 		{
 		}
 		else if (check_newline(ctx, c, char_count))

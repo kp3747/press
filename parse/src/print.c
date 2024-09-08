@@ -47,6 +47,9 @@ void print_char_token(file f, char c)
 	case text_token_type_right_square_bracket:
 		print_char(f, ']');
 		break;
+	case text_token_type_fraction_slash:
+		print_fraction_slash(f);
+		break;
 	case text_token_type_note:
 	case text_token_type_strong_end:
 	case text_token_type_emphasis_end:
@@ -84,6 +87,13 @@ void print_apostrophe(file f)
 	print_char(f, 0xE2);
 	print_char(f, 0x80);
 	print_char(f, 0x99);
+}
+
+void print_fraction_slash(file f)
+{
+	print_char(f, 0xE2);
+	print_char(f, 0x81);
+	print_char(f, 0x84);
 }
 
 void print_quote_level_1_begin(file f)
