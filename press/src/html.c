@@ -133,7 +133,6 @@ static void generate_html(const document* doc)
 	if (doc->metadata.title)
 	{
 		print_str(f, "\t\t<title>");
-		// TODO: Text tokens are not currently supported, but this will work once they are
 		print_simple_text(f, doc->metadata.title);
 		print_str(f, "</title\n>");
 	}

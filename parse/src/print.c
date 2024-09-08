@@ -137,5 +137,5 @@ void print_quote_level_2_end(file f)
 void print_simple_text(file f, const char* text)
 {
 	while (*text)
-		print_char(f, *text++);
+		print_char_token(f, *text++);
 }
